@@ -1,12 +1,15 @@
 import { MusicController } from '../../audio/music.js';
 import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
 import {
-  LADDERS,
   PLATFORM_YS,
   getPlayerYForLevel,
-  type LadderLink,
 } from '../level/LevelModel.js';
 import { BarrelSystem } from '../systems/BarrelSystem.js';
+import {
+  drawLadderLayer,
+  findNearestLadder,
+  updateLadderVisuals,
+} from '../systems/LadderSystem.js';
 
 const HIGH_SCORE_KEY = 'barrel-beat-high-score';
 
@@ -121,7 +124,7 @@ export class PlayScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.goal, () => this.onGoalReached(), undefined, this);
 
     this.time.addEvent({
-      delay: 1380,
+      delay: 1360,
       loop: true,
       callback: this.spawnBarrelFromBoss,
       callbackScope: this,
@@ -182,29 +185,9 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    for (const ladder of LADDERS) {
-      const yTop = PLATFORM_YS[ladder.to];
-      const yBottom = PLATFORM_YS[ladder.from];
-      const centerY = (yTop + yBottom) / 2;
-      const ladderHeight = yBottom - yTop - 18;
-
-      const hint = this.add.rectangle(ladder.x, centerY, 64, ladderHeight + 34, 0xfbbf24, 0.04).setOrigin(0.5);
-      this.ladderHints.push(hint);
-
-      this.add.rectangle(ladder.x, centerY, 10, ladderHeight, 0x94a3b8).setOrigin(0.5);
-
-      for (let y = yTop + 16; y < yBottom - 12; y += 18) {
-        this.add.rectangle(ladder.x, y, 26, 4, 0xcbd5e1).setOrigin(0.5);
-      }
-
-      const marker = this.add.text(ladder.x, yBottom - 28, '▲', {
-        fontFamily: 'Arial Black, Arial, sans-serif',
-        fontSize: '16px',
-        color: '#fde68a',
-      }).setOrigin(0.5).setAlpha(0.24);
-
-      this.ladderMarkers.push(marker);
-    }
+    const ladderLayer = drawLadderLayer(this);
+    this.ladderHints = ladderLayer.hints;
+    this.ladderMarkers = ladderLayer.markers;
   }
 
   private restartRun(): void {
@@ -338,29 +321,6 @@ export class PlayScene extends Phaser.Scene {
     this.barrelSystem.spawnFromBoss(this.boss.x);
   }
 
-  private findNearestLadder(direction: 'up' | 'down'): LadderLink | null {
-    const candidates = LADDERS.filter((ladder) =>
-      direction === 'up'
-        ? this.currentLevelIndex === ladder.from
-        : this.currentLevelIndex === ladder.to,
-    );
-
-    if (candidates.length === 0) return null;
-
-    let nearest: LadderLink | null = null;
-    let nearestDistance = Infinity;
-
-    for (const ladder of candidates) {
-      const distance = Math.abs(this.player.x - ladder.x);
-      if (distance < nearestDistance) {
-        nearest = ladder;
-        nearestDistance = distance;
-      }
-    }
-
-    return nearestDistance <= 132 ? nearest : null;
-  }
-
   private tryStartClimb(): void {
     if (this.activeClimb) return;
 
@@ -368,29 +328,37 @@ export class PlayScene extends Phaser.Scene {
     const wantsDown = this.cursors.down?.isDown || this.downPressed;
 
     if (wantsUp) {
-      const ladder = this.findNearestLadder('up');
+      const ladder = findNearestLadder(this.player.x, this.currentLevelIndex, 'up', 148);
       if (ladder) {
-        this.activeClimb = {
-          x: ladder.x,
-          targetLevel: ladder.to,
-          targetY: getPlayerYForLevel(ladder.to),
-          direction: -1,
-        };
-        this.showMessage('CLIMB');
+        this.player.x = Phaser.Math.Linear(this.player.x, ladder.x, 0.32);
+
+        if (Math.abs(this.player.x - ladder.x) < 9) {
+          this.activeClimb = {
+            x: ladder.x,
+            targetLevel: ladder.to,
+            targetY: getPlayerYForLevel(ladder.to),
+            direction: -1,
+          };
+          this.showMessage('CLIMB');
+        }
         return;
       }
     }
 
     if (wantsDown) {
-      const ladder = this.findNearestLadder('down');
+      const ladder = findNearestLadder(this.player.x, this.currentLevelIndex, 'down', 148);
       if (ladder) {
-        this.activeClimb = {
-          x: ladder.x,
-          targetLevel: ladder.from,
-          targetY: getPlayerYForLevel(ladder.from),
-          direction: 1,
-        };
-        this.showMessage('DOWN');
+        this.player.x = Phaser.Math.Linear(this.player.x, ladder.x, 0.32);
+
+        if (Math.abs(this.player.x - ladder.x) < 9) {
+          this.activeClimb = {
+            x: ladder.x,
+            targetLevel: ladder.from,
+            targetY: getPlayerYForLevel(ladder.from),
+            direction: 1,
+          };
+          this.showMessage('DOWN');
+        }
       }
     }
   }
@@ -398,8 +366,8 @@ export class PlayScene extends Phaser.Scene {
   private updateClimb(): void {
     if (!this.activeClimb) return;
 
-    this.player.x = Phaser.Math.Linear(this.player.x, this.activeClimb.x, 0.42);
-    this.player.y += this.activeClimb.direction * 4.4;
+    this.player.x = Phaser.Math.Linear(this.player.x, this.activeClimb.x, 0.46);
+    this.player.y += this.activeClimb.direction * 4.8;
 
     const reached =
       this.activeClimb.direction === -1
@@ -489,23 +457,19 @@ export class PlayScene extends Phaser.Scene {
     const movingLeft = this.cursors.left?.isDown || this.leftPressed;
     const movingRight = this.cursors.right?.isDown || this.rightPressed;
 
-    for (const hint of this.ladderHints) {
-      hint.setAlpha(Math.abs(this.player.x - hint.x) < 132 ? 0.14 : 0.04);
-    }
-
-    for (const marker of this.ladderMarkers) {
-      marker.setAlpha(Math.abs(this.player.x - marker.x) < 132 ? 0.72 : 0.24);
-    }
+    updateLadderVisuals(this.player.x, this.ladderHints, this.ladderMarkers, 148);
 
     if (this.activeClimb) {
       this.updateClimb();
     } else {
       this.player.y = getPlayerYForLevel(this.currentLevelIndex);
 
-      if (movingLeft) {
-        this.player.x -= 3.6;
-      } else if (movingRight) {
-        this.player.x += 3.6;
+      if (!(this.cursors.up?.isDown || this.upPressed || this.cursors.down?.isDown || this.downPressed)) {
+        if (movingLeft) {
+          this.player.x -= 3.6;
+        } else if (movingRight) {
+          this.player.x += 3.6;
+        }
       }
 
       this.player.x = Phaser.Math.Clamp(this.player.x, 18, this.scale.width - 18);
