@@ -1,12 +1,15 @@
 import { MusicController } from '../../audio/music.js';
+import { createBarrel, type BarrelState } from '../entities/BarrelFactory.js';
+import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
+import {
+  LADDERS,
+  PLATFORM_YS,
+  directionForRow,
+  getPlayerYForLevel,
+  type LadderLink,
+} from '../level/LevelModel.js';
 
 const HIGH_SCORE_KEY = 'barrel-beat-high-score';
-
-type LadderLink = {
-  x: number;
-  from: number;
-  to: number;
-};
 
 type ActiveClimb = {
   x: number;
@@ -15,25 +18,7 @@ type ActiveClimb = {
   direction: -1 | 1;
 };
 
-type BarrelState = {
-  row: number;
-  direction: -1 | 1;
-  dropping: boolean;
-  targetRow: number | null;
-  targetY: number | null;
-};
-
 export class PlayScene extends Phaser.Scene {
-  private readonly platformYs = [760, 650, 540, 430, 320, 210, 100];
-  private readonly ladders: LadderLink[] = [
-    { x: 90, from: 0, to: 1 },
-    { x: 300, from: 1, to: 2 },
-    { x: 130, from: 2, to: 3 },
-    { x: 285, from: 3, to: 4 },
-    { x: 165, from: 4, to: 5 },
-    { x: 305, from: 5, to: 6 },
-  ];
-
   private player!: Phaser.GameObjects.Container;
   private playerBody!: Phaser.Physics.Arcade.Body;
   private goal!: Phaser.GameObjects.Container;
@@ -77,7 +62,7 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#120d08');
     this.drawWorld();
 
-    this.player = this.createHero(42, this.getPlayerYForLevel(0));
+    this.player = createHero(this, 42, getPlayerYForLevel(0));
     this.physics.add.existing(this.player);
     this.playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     this.playerBody.setAllowGravity(false);
@@ -85,10 +70,10 @@ export class PlayScene extends Phaser.Scene {
     this.playerBody.setSize(22, 34);
     this.playerBody.setOffset(-11, -17);
 
-    this.goal = this.createGoal(width - 42, this.platformYs[this.platformYs.length - 1] - 22);
+    this.goal = createGoal(this, width - 42, PLATFORM_YS[PLATFORM_YS.length - 1] - 22);
     this.physics.add.existing(this.goal, true);
 
-    this.boss = this.createBoss(width - 88, this.platformYs[this.platformYs.length - 1] - 8);
+    this.boss = createBoss(this, width - 88, PLATFORM_YS[PLATFORM_YS.length - 1] - 8);
 
     this.barrels = this.physics.add.group({
       allowGravity: false,
@@ -128,21 +113,8 @@ export class PlayScene extends Phaser.Scene {
       align: 'center',
     }).setOrigin(0.5);
 
-    this.physics.add.overlap(
-      this.player,
-      this.barrels,
-      () => this.onBarrelHit(),
-      undefined,
-      this,
-    );
-
-    this.physics.add.overlap(
-      this.player,
-      this.goal,
-      () => this.onGoalReached(),
-      undefined,
-      this,
-    );
+    this.physics.add.overlap(this.player, this.barrels, () => this.onBarrelHit(), undefined, this);
+    this.physics.add.overlap(this.player, this.goal, () => this.onGoalReached(), undefined, this);
 
     this.time.addEvent({
       delay: 1450,
@@ -175,42 +147,6 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private createHero(x: number, y: number): Phaser.GameObjects.Container {
-    const legL = this.add.rectangle(-5, 19, 4, 10, 0x60a5fa);
-    const legR = this.add.rectangle(5, 19, 4, 10, 0x60a5fa);
-    const armL = this.add.rectangle(-12, 5, 4, 10, 0xffdfb5);
-    const armR = this.add.rectangle(12, 5, 4, 10, 0xffdfb5);
-    const body = this.add.rectangle(0, 6, 18, 18, 0xff7b00);
-    const head = this.add.circle(0, -10, 8, 0xffdfb5);
-    const hat = this.add.rectangle(0, -17, 18, 5, 0xd62828);
-    return this.add.container(x, y, [legL, legR, armL, armR, body, head, hat]);
-  }
-
-  private createGoal(x: number, y: number): Phaser.GameObjects.Container {
-    const glow = this.add.circle(0, -8, 14, 0x38bdf8, 0.35);
-    const beacon = this.add.rectangle(0, 0, 12, 32, 0x7dd3fc);
-    const top = this.add.circle(0, -18, 8, 0xe0f2fe);
-    return this.add.container(x, y, [glow, beacon, top]);
-  }
-
-  private createBoss(x: number, y: number): Phaser.GameObjects.Container {
-    const body = this.add.ellipse(0, 0, 46, 34, 0x8b4513);
-    const head = this.add.circle(-4, -22, 12, 0xb45309);
-    const eyeL = this.add.circle(-8, -24, 2, 0xffffff);
-    const eyeR = this.add.circle(0, -24, 2, 0xffffff);
-    const arm = this.add.rectangle(18, -2, 20, 8, 0x8b4513);
-    const barrel = this.add.circle(28, 2, 8, 0xd97706);
-    return this.add.container(x, y, [body, head, eyeL, eyeR, arm, barrel]);
-  }
-
-  private createBarrel(x: number, y: number): Phaser.GameObjects.Container {
-    const outer = this.add.circle(0, 0, 13, 0xd97706);
-    const bandL = this.add.rectangle(-6, 0, 3, 22, 0x78350f);
-    const bandR = this.add.rectangle(6, 0, 3, 22, 0x78350f);
-    const middle = this.add.rectangle(0, 0, 4, 22, 0x92400e);
-    return this.add.container(x, y, [outer, bandL, bandR, middle]);
-  }
-
   private drawWorld(): void {
     const { width } = this.scale;
 
@@ -226,8 +162,8 @@ export class PlayScene extends Phaser.Scene {
       color: '#f3e9dc',
     }).setOrigin(0.5);
 
-    for (let i = 0; i < this.platformYs.length; i += 1) {
-      const y = this.platformYs[i];
+    for (let i = 0; i < PLATFORM_YS.length; i += 1) {
+      const y = PLATFORM_YS[i];
       const color = i % 2 === 0 ? 0x6b3f1d : 0x7a4520;
       this.add.rectangle(width / 2, y, width - 28, 12, color).setOrigin(0.5);
 
@@ -236,13 +172,13 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    for (const ladder of this.ladders) {
-      const yTop = this.platformYs[ladder.to];
-      const yBottom = this.platformYs[ladder.from];
+    for (const ladder of LADDERS) {
+      const yTop = PLATFORM_YS[ladder.to];
+      const yBottom = PLATFORM_YS[ladder.from];
       const centerY = (yTop + yBottom) / 2;
       const ladderHeight = yBottom - yTop - 18;
 
-      const hint = this.add.rectangle(ladder.x, centerY, 44, ladderHeight + 26, 0xfbbf24, 0.05).setOrigin(0.5);
+      const hint = this.add.rectangle(ladder.x, centerY, 52, ladderHeight + 28, 0xfbbf24, 0.04).setOrigin(0.5);
       this.ladderHints.push(hint);
 
       this.add.rectangle(ladder.x, centerY, 10, ladderHeight, 0x94a3b8).setOrigin(0.5);
@@ -329,6 +265,8 @@ export class PlayScene extends Phaser.Scene {
 
     const shareHandler = async (event: Event) => {
       event.preventDefault();
+      event.stopPropagation();
+
       const text = `I reached score ${this.score} on Barrel Beat, level ${this.stage}.`;
 
       try {
@@ -369,14 +307,6 @@ export class PlayScene extends Phaser.Scene {
     this.music.start();
   }
 
-  private getPlayerYForLevel(levelIndex: number): number {
-    return this.platformYs[levelIndex] - 24;
-  }
-
-  private directionForRow(row: number): -1 | 1 {
-    return row % 2 === 0 ? -1 : 1;
-  }
-
   private spawnBarrelFromBoss(): void {
     if (this.gameOver || !this.started) return;
 
@@ -387,8 +317,8 @@ export class PlayScene extends Phaser.Scene {
       yoyo: true,
     });
 
-    const topRow = this.platformYs.length - 1;
-    const barrel = this.createBarrel(this.boss.x - 24, this.platformYs[topRow] - 18);
+    const topRow = PLATFORM_YS.length - 1;
+    const barrel = createBarrel(this, this.boss.x - 24, PLATFORM_YS[topRow] - 18);
 
     this.physics.add.existing(barrel);
     const body = barrel.body as Phaser.Physics.Arcade.Body;
@@ -408,7 +338,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private findNearestLadder(direction: 'up' | 'down'): LadderLink | null {
-    const candidates = this.ladders.filter((ladder) =>
+    const candidates = LADDERS.filter((ladder) =>
       direction === 'up'
         ? this.currentLevelIndex === ladder.from
         : this.currentLevelIndex === ladder.to,
@@ -427,7 +357,7 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    return nearestDistance <= 90 ? nearest : null;
+    return nearestDistance <= 120 ? nearest : null;
   }
 
   private tryStartClimb(): void {
@@ -442,7 +372,7 @@ export class PlayScene extends Phaser.Scene {
         this.activeClimb = {
           x: ladder.x,
           targetLevel: ladder.to,
-          targetY: this.getPlayerYForLevel(ladder.to),
+          targetY: getPlayerYForLevel(ladder.to),
           direction: -1,
         };
         this.showMessage('CLIMB');
@@ -456,7 +386,7 @@ export class PlayScene extends Phaser.Scene {
         this.activeClimb = {
           x: ladder.x,
           targetLevel: ladder.from,
-          targetY: this.getPlayerYForLevel(ladder.from),
+          targetY: getPlayerYForLevel(ladder.from),
           direction: 1,
         };
         this.showMessage('DOWN');
@@ -467,8 +397,8 @@ export class PlayScene extends Phaser.Scene {
   private updateClimb(): void {
     if (!this.activeClimb) return;
 
-    this.player.x = Phaser.Math.Linear(this.player.x, this.activeClimb.x, 0.34);
-    this.player.y += this.activeClimb.direction * 3.6;
+    this.player.x = Phaser.Math.Linear(this.player.x, this.activeClimb.x, 0.4);
+    this.player.y += this.activeClimb.direction * 4.2;
 
     const reached =
       this.activeClimb.direction === -1
@@ -492,7 +422,7 @@ export class PlayScene extends Phaser.Scene {
       barrel.rotation += 0.08 * state.direction;
 
       if (state.dropping && state.targetRow !== null && state.targetY !== null) {
-        barrel.y += 4.2;
+        barrel.y += 4.8;
 
         if (barrel.y >= state.targetY) {
           barrel.y = state.targetY;
@@ -500,16 +430,16 @@ export class PlayScene extends Phaser.Scene {
           state.targetRow = null;
           state.targetY = null;
           state.dropping = false;
-          state.direction = this.directionForRow(state.row);
+          state.direction = directionForRow(state.row);
           barrel.setData('state', state);
         }
 
         continue;
       }
 
-      barrel.x += state.direction * (1.7 + this.stage * 0.18);
+      barrel.x += state.direction * (2 + this.stage * 0.2);
 
-      const ladderBelow = this.ladders.find((ladder) => ladder.to === state.row);
+      const ladderBelow = LADDERS.find((ladder) => ladder.to === state.row);
       if (ladderBelow) {
         const crossed =
           (state.direction < 0 && barrel.x <= ladderBelow.x) ||
@@ -518,7 +448,7 @@ export class PlayScene extends Phaser.Scene {
         if (crossed) {
           state.dropping = true;
           state.targetRow = ladderBelow.from;
-          state.targetY = this.platformYs[ladderBelow.from] - 18;
+          state.targetY = PLATFORM_YS[ladderBelow.from] - 18;
           barrel.x = ladderBelow.x;
           barrel.setData('state', state);
           continue;
@@ -550,7 +480,7 @@ export class PlayScene extends Phaser.Scene {
 
   private onGoalReached(): void {
     if (!this.started || this.gameOver) return;
-    if (this.currentLevelIndex !== this.platformYs.length - 1) return;
+    if (this.currentLevelIndex !== PLATFORM_YS.length - 1) return;
     if (this.player.x < this.scale.width - 82) return;
 
     this.stage += 1;
@@ -567,7 +497,7 @@ export class PlayScene extends Phaser.Scene {
     this.activeClimb = null;
     this.playerBody.setVelocity(0);
     this.player.x = 42;
-    this.player.y = this.getPlayerYForLevel(0);
+    this.player.y = getPlayerYForLevel(0);
   }
 
   private clearBarrels(): void {
@@ -615,18 +545,18 @@ export class PlayScene extends Phaser.Scene {
     const movingRight = this.cursors.right?.isDown || this.rightPressed;
 
     for (const hint of this.ladderHints) {
-      hint.setAlpha(Math.abs(this.player.x - hint.x) < 90 ? 0.16 : 0.05);
+      hint.setAlpha(Math.abs(this.player.x - hint.x) < 120 ? 0.14 : 0.04);
     }
 
     if (this.activeClimb) {
       this.updateClimb();
     } else {
-      this.player.y = this.getPlayerYForLevel(this.currentLevelIndex);
+      this.player.y = getPlayerYForLevel(this.currentLevelIndex);
 
       if (movingLeft) {
-        this.player.x -= 3.2;
+        this.player.x -= 3.4;
       } else if (movingRight) {
-        this.player.x += 3.2;
+        this.player.x += 3.4;
       }
 
       this.player.x = Phaser.Math.Clamp(this.player.x, 18, this.scale.width - 18);
@@ -634,6 +564,6 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.updateBarrels();
-    this.boss.y = this.platformYs[this.platformYs.length - 1] - 8 + Math.sin(this.time.now / 180) * 2;
+    this.boss.y = PLATFORM_YS[PLATFORM_YS.length - 1] - 8 + Math.sin(this.time.now / 180) * 2;
   }
 }
