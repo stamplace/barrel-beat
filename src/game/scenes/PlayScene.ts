@@ -183,7 +183,6 @@ export class PlayScene extends Phaser.Scene {
     const body = this.add.rectangle(0, 6, 18, 18, 0xff7b00);
     const head = this.add.circle(0, -10, 8, 0xffdfb5);
     const hat = this.add.rectangle(0, -17, 18, 5, 0xd62828);
-
     return this.add.container(x, y, [legL, legR, armL, armR, body, head, hat]);
   }
 
@@ -254,6 +253,16 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private restartRun(): void {
+    this.leftPressed = false;
+    this.rightPressed = false;
+    this.upPressed = false;
+    this.downPressed = false;
+    document.getElementById('gameover-overlay')?.classList.add('hidden');
+    document.getElementById('start-overlay')?.classList.add('hidden');
+    this.scene.restart();
+  }
+
   private setupDomControls(): void {
     const bindHold = (
       id: string,
@@ -303,6 +312,7 @@ export class PlayScene extends Phaser.Scene {
     const startButton = document.getElementById('start-button');
     const restartButton = document.getElementById('restart-button');
     const shareButton = document.getElementById('share-button');
+    const gameoverCard = document.getElementById('gameover-card');
 
     startOverlay?.classList.remove('hidden');
     gameoverOverlay?.classList.add('hidden');
@@ -314,7 +324,7 @@ export class PlayScene extends Phaser.Scene {
 
     const restartHandler = (event: Event) => {
       event.preventDefault();
-      this.scene.restart();
+      this.restartRun();
     };
 
     const shareHandler = async (event: Event) => {
@@ -341,10 +351,12 @@ export class PlayScene extends Phaser.Scene {
 
     startButton?.addEventListener('click', startHandler);
     restartButton?.addEventListener('click', restartHandler);
+    gameoverCard?.addEventListener('click', restartHandler);
     shareButton?.addEventListener('click', shareHandler);
 
     this.domCleanup.push(() => startButton?.removeEventListener('click', startHandler));
     this.domCleanup.push(() => restartButton?.removeEventListener('click', restartHandler));
+    this.domCleanup.push(() => gameoverCard?.removeEventListener('click', restartHandler));
     this.domCleanup.push(() => shareButton?.removeEventListener('click', shareHandler));
   }
 
