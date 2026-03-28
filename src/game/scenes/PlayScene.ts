@@ -5,6 +5,7 @@ import {
   getPlayerYForLevel,
 } from '../level/LevelModel.js';
 import { BarrelSystem } from '../systems/BarrelSystem.js';
+import { FeedbackSystem } from '../systems/FeedbackSystem.js';
 import {
   drawLadderLayer,
   findNearestLadder,
@@ -27,6 +28,7 @@ export class PlayScene extends Phaser.Scene {
   private boss!: Phaser.GameObjects.Container;
   private barrels!: Phaser.Physics.Arcade.Group;
   private barrelSystem!: BarrelSystem;
+  private feedback!: FeedbackSystem;
 
   private ladderHints: Phaser.GameObjects.Rectangle[] = [];
   private ladderMarkers: Phaser.GameObjects.Text[] = [];
@@ -36,7 +38,6 @@ export class PlayScene extends Phaser.Scene {
   private bestText!: Phaser.GameObjects.Text;
   private livesText!: Phaser.GameObjects.Text;
   private levelText!: Phaser.GameObjects.Text;
-  private messageText!: Phaser.GameObjects.Text;
 
   private score = 0;
   private best = 0;
@@ -86,6 +87,7 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.barrelSystem = new BarrelSystem(this, this.barrels);
+    this.feedback = new FeedbackSystem(this);
 
     this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
@@ -112,13 +114,6 @@ export class PlayScene extends Phaser.Scene {
       fontSize: '15px',
       color: '#ffd7a3',
     }).setOrigin(1, 0);
-
-    this.messageText = this.add.text(width / 2, height / 2, 'CLIMB TO THE TOP', {
-      fontFamily: 'Arial Black, Arial, sans-serif',
-      fontSize: '24px',
-      color: '#ffcf7d',
-      align: 'center',
-    }).setOrigin(0.5);
 
     this.physics.add.overlap(this.player, this.barrels, () => this.onBarrelHit(), undefined, this);
     this.physics.add.overlap(this.player, this.goal, () => this.onGoalReached(), undefined, this);
@@ -302,14 +297,16 @@ export class PlayScene extends Phaser.Scene {
   private beginRun(): void {
     if (this.started) return;
     this.started = true;
-    this.messageText.setVisible(false);
     document.getElementById('start-overlay')?.classList.add('hidden');
     document.getElementById('gameover-overlay')?.classList.add('hidden');
     this.music.start();
+    this.feedback.showBanner(`STAGE ${this.stage}`, 'Reach the beacon', 1000);
   }
 
   private spawnBarrelFromBoss(): void {
     if (this.gameOver || !this.started) return;
+
+    this.feedback.pulse(this.boss);
 
     this.tweens.add({
       targets: this.boss,
@@ -339,7 +336,7 @@ export class PlayScene extends Phaser.Scene {
             targetY: getPlayerYForLevel(ladder.to),
             direction: -1,
           };
-          this.showMessage('CLIMB');
+          this.feedback.showBanner('CLIMB', 'Keep moving up', 520);
         }
         return;
       }
@@ -357,7 +354,7 @@ export class PlayScene extends Phaser.Scene {
             targetY: getPlayerYForLevel(ladder.from),
             direction: 1,
           };
-          this.showMessage('DOWN');
+          this.feedback.showBanner('DOWN', '', 380);
         }
       }
     }
@@ -386,6 +383,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.lives -= 1;
     this.livesText.setText(`LIVES ${this.lives}`);
+    this.feedback.flash(0xef4444, 0.22, 220);
+    this.feedback.pulse(this.player);
     this.cameras.main.shake(150, 0.01);
     this.barrelSystem.clear();
     this.resetPlayerToBottom();
@@ -395,7 +394,7 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    this.showMessage('HIT!');
+    this.feedback.showBanner('HIT!', 'Back to the bottom', 720);
   }
 
   private onGoalReached(): void {
@@ -409,7 +408,8 @@ export class PlayScene extends Phaser.Scene {
     this.levelText.setText(`LEVEL ${this.stage}`);
     this.barrelSystem.clear();
     this.resetPlayerToBottom();
-    this.showMessage(`LEVEL ${this.stage}`);
+    this.feedback.flash(0x38bdf8, 0.18, 260);
+    this.feedback.showBanner(`LEVEL ${this.stage}`, 'Faster barrels', 900);
   }
 
   private resetPlayerToBottom(): void {
@@ -418,15 +418,6 @@ export class PlayScene extends Phaser.Scene {
     this.playerBody.setVelocity(0);
     this.player.x = 42;
     this.player.y = getPlayerYForLevel(0);
-  }
-
-  private showMessage(text: string): void {
-    this.messageText.setText(text).setVisible(true);
-    this.time.delayedCall(700, () => {
-      if (!this.gameOver && this.started) {
-        this.messageText.setVisible(false);
-      }
-    });
   }
 
   private endGame(): void {
@@ -446,7 +437,7 @@ export class PlayScene extends Phaser.Scene {
     if (finalScore) finalScore.textContent = String(this.score);
     if (bestScore) bestScore.textContent = String(this.best);
 
-    this.messageText.setVisible(false);
+    this.feedback.flash(0xffffff, 0.14, 260);
     gameoverOverlay?.classList.remove('hidden');
     this.music.stop();
   }
