@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.DS_Store
+*.log
+public/build/
+public/vendor/
+public/assets/audio/theme.mp3
