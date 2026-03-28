@@ -1,6 +1,10 @@
 import { createBarrel, type BarrelState } from '../entities/BarrelFactory.js';
 import { LADDERS, PLATFORM_YS, directionForRow } from '../level/LevelModel.js';
 
+type RuntimeBarrelState = BarrelState & {
+  dropEvaluatedRow: number | null;
+};
+
 export class BarrelSystem {
   constructor(
     private scene: Phaser.Scene,
@@ -23,7 +27,8 @@ export class BarrelSystem {
       dropping: false,
       targetRow: null,
       targetY: null,
-    } as BarrelState);
+      dropEvaluatedRow: null,
+    } as RuntimeBarrelState);
 
     this.barrels.add(barrel);
   }
@@ -35,17 +40,30 @@ export class BarrelSystem {
     }
   }
 
+  private getHorizontalSpeed(stage: number): number {
+    if (stage <= 1) return 1.45;
+    if (stage === 2) return 1.8;
+    return 1.9 + stage * 0.16;
+  }
+
+  private getDropChance(stage: number): number {
+    if (stage <= 1) return 0.28;
+    if (stage === 2) return 0.42;
+    if (stage === 3) return 0.56;
+    return 0.68;
+  }
+
   update(stage: number, sceneWidth: number): void {
     const barrels = this.barrels.getChildren() as Phaser.GameObjects.Container[];
 
     for (const barrel of barrels) {
-      const state = barrel.getData('state') as BarrelState | undefined;
+      const state = barrel.getData('state') as RuntimeBarrelState | undefined;
       if (!state) continue;
 
-      barrel.rotation += 0.08 * state.direction;
+      barrel.rotation += 0.06 * state.direction;
 
       if (state.dropping && state.targetRow !== null && state.targetY !== null) {
-        barrel.y += 5.2;
+        barrel.y += 4.4;
 
         if (barrel.y >= state.targetY) {
           barrel.y = state.targetY;
@@ -54,13 +72,14 @@ export class BarrelSystem {
           state.targetY = null;
           state.dropping = false;
           state.direction = directionForRow(state.row);
+          state.dropEvaluatedRow = null;
           barrel.setData('state', state);
         }
 
         continue;
       }
 
-      barrel.x += state.direction * (2.2 + stage * 0.22);
+      barrel.x += state.direction * this.getHorizontalSpeed(stage);
 
       const ladderBelow = LADDERS.find((ladder) => ladder.to === state.row);
       if (ladderBelow) {
@@ -68,11 +87,16 @@ export class BarrelSystem {
           (state.direction < 0 && barrel.x <= ladderBelow.x) ||
           (state.direction > 0 && barrel.x >= ladderBelow.x);
 
-        if (crossed) {
-          state.dropping = true;
-          state.targetRow = ladderBelow.from;
-          state.targetY = PLATFORM_YS[ladderBelow.from] - 18;
-          barrel.x = ladderBelow.x;
+        if (crossed && state.dropEvaluatedRow !== state.row) {
+          state.dropEvaluatedRow = state.row;
+
+          if (Math.random() < this.getDropChance(stage)) {
+            state.dropping = true;
+            state.targetRow = ladderBelow.from;
+            state.targetY = PLATFORM_YS[ladderBelow.from] - 18;
+            barrel.x = ladderBelow.x;
+          }
+
           barrel.setData('state', state);
           continue;
         }

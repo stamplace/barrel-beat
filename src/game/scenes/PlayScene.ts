@@ -37,6 +37,7 @@ export class PlayScene extends Phaser.Scene {
   private ladderHints: Phaser.GameObjects.Rectangle[] = [];
   private ladderMarkers: Phaser.GameObjects.Text[] = [];
 
+  private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
   private bestText!: Phaser.GameObjects.Text;
   private livesText!: Phaser.GameObjects.Text;
@@ -54,8 +55,10 @@ export class PlayScene extends Phaser.Scene {
   private snapToLadder: LadderSnap | null = null;
   private targetMoveX: number | null = null;
   private lastLadderHintAt = 0;
-  private domCleanup: Array<() => void> = [];
+  private runStartedAt = 0;
+  private invulnerableUntil = 0;
 
+  private domCleanup: Array<() => void> = [];
   private music = new MusicController();
 
   constructor() {
@@ -73,6 +76,8 @@ export class PlayScene extends Phaser.Scene {
     this.snapToLadder = null;
     this.targetMoveX = null;
     this.lastLadderHintAt = 0;
+    this.runStartedAt = 0;
+    this.invulnerableUntil = 0;
   }
 
   create(): void {
@@ -104,6 +109,7 @@ export class PlayScene extends Phaser.Scene {
 
     this.barrelSystem = new BarrelSystem(this, this.barrels);
     this.feedback = new FeedbackSystem(this);
+    this.cursors = this.input.keyboard?.createCursorKeys() as Phaser.Types.Input.Keyboard.CursorKeys;
 
     this.scoreText = this.add.text(16, 14, 'SCORE 0', {
       fontFamily: 'Arial, sans-serif',
@@ -133,7 +139,7 @@ export class PlayScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.goal, () => this.onGoalReached(), undefined, this);
 
     this.time.addEvent({
-      delay: 1360,
+      delay: 1650,
       loop: true,
       callback: this.spawnBarrelFromBoss,
       callbackScope: this,
@@ -262,10 +268,13 @@ export class PlayScene extends Phaser.Scene {
   private beginRun(): void {
     if (this.started) return;
     this.started = true;
+    this.runStartedAt = this.time.now;
+    this.invulnerableUntil = this.time.now + 1800;
+
     document.getElementById('start-overlay')?.classList.add('hidden');
     document.getElementById('gameover-overlay')?.classList.add('hidden');
     this.music.start();
-    this.feedback.showBanner(`STAGE ${this.stage}`, 'Reach the beacon', 1000);
+    this.feedback.showBanner('STAGE 1', 'Easy opening window', 1100);
   }
 
   private handleWorldTap(pointer: Phaser.Input.Pointer): void {
@@ -280,8 +289,8 @@ export class PlayScene extends Phaser.Scene {
 
     if (this.activeClimb || this.snapToLadder) return;
 
-    const upLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'up', 56);
-    const downLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'down', 56);
+    const upLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'up', 64);
+    const downLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'down', 64);
 
     if (upLadder || downLadder) {
       const chosen = upLadder ?? downLadder;
@@ -296,6 +305,7 @@ export class PlayScene extends Phaser.Scene {
         targetY: getPlayerYForLevel(targetLevel),
         direction,
       };
+      this.targetMoveX = null;
       return;
     }
 
@@ -304,6 +314,7 @@ export class PlayScene extends Phaser.Scene {
 
   private spawnBarrelFromBoss(): void {
     if (this.gameOver || !this.started) return;
+    if (this.time.now - this.runStartedAt < 2200) return;
 
     this.feedback.pulse(this.boss);
 
@@ -334,7 +345,7 @@ export class PlayScene extends Phaser.Scene {
       this.feedback.showBanner(
         this.activeClimb.direction === -1 ? 'CLIMB' : 'DOWN',
         '',
-        380,
+        320,
       );
     }
   }
@@ -358,6 +369,15 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private updateAutoMove(): void {
+    const keyboardLeft = this.cursors.left?.isDown;
+    const keyboardRight = this.cursors.right?.isDown;
+
+    if (keyboardLeft || keyboardRight) {
+      this.targetMoveX = null;
+      this.player.x += keyboardLeft ? -4.4 : 4.4;
+      return;
+    }
+
     if (this.targetMoveX === null) return;
 
     const delta = this.targetMoveX - this.player.x;
@@ -367,11 +387,12 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    this.player.x += Math.sign(delta) * 3.8;
+    this.player.x += Math.sign(delta) * 4.4;
   }
 
   private onBarrelHit(): void {
     if (this.gameOver || !this.started) return;
+    if (this.time.now < this.invulnerableUntil) return;
 
     this.lives -= 1;
     this.livesText.setText(`LIVES ${this.lives}`);
@@ -380,13 +401,14 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.shake(150, 0.01);
     this.barrelSystem.clear();
     this.resetPlayerToBottom();
+    this.invulnerableUntil = this.time.now + 1200;
 
     if (this.lives <= 0) {
       this.endGame();
       return;
     }
 
-    this.feedback.showBanner('HIT!', 'Back to the bottom', 720);
+    this.feedback.showBanner('HIT!', 'Short shield active', 720);
   }
 
   private onGoalReached(): void {
@@ -400,8 +422,9 @@ export class PlayScene extends Phaser.Scene {
     this.levelText.setText(`LEVEL ${this.stage}`);
     this.barrelSystem.clear();
     this.resetPlayerToBottom();
+    this.invulnerableUntil = this.time.now + 1200;
     this.feedback.flash(0x38bdf8, 0.18, 260);
-    this.feedback.showBanner(`LEVEL ${this.stage}`, 'Faster barrels', 900);
+    this.feedback.showBanner(`LEVEL ${this.stage}`, 'Barrels get meaner now', 900);
   }
 
   private resetPlayerToBottom(): void {
@@ -440,6 +463,12 @@ export class PlayScene extends Phaser.Scene {
     if (this.gameOver || !this.started) return;
 
     updateLadderVisuals(this.player.x, this.ladderHints, this.ladderMarkers, 170);
+
+    if (this.time.now < this.invulnerableUntil) {
+      this.player.alpha = Math.floor(this.time.now / 80) % 2 === 0 ? 0.55 : 1;
+    } else {
+      this.player.alpha = 1;
+    }
 
     if (this.activeClimb) {
       this.updateClimb();
