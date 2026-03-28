@@ -16,7 +16,7 @@ export function drawLadderLayer(scene: Phaser.Scene): LadderLayer {
     const ladderHeight = yBottom - yTop - 18;
 
     const hint = scene.add
-      .rectangle(ladder.x, centerY, 70, ladderHeight + 38, 0xfbbf24, 0.04)
+      .rectangle(ladder.x, centerY, 74, ladderHeight + 42, 0xfbbf24, 0.04)
       .setOrigin(0.5);
     hints.push(hint);
 
@@ -45,14 +45,14 @@ export function updateLadderVisuals(
   playerX: number,
   hints: Phaser.GameObjects.Rectangle[],
   markers: Phaser.GameObjects.Text[],
-  activeDistance = 148,
+  activeDistance = 170,
 ): void {
   for (const hint of hints) {
-    hint.setAlpha(Math.abs(playerX - hint.x) < activeDistance ? 0.16 : 0.04);
+    hint.setAlpha(Math.abs(playerX - hint.x) < activeDistance ? 0.18 : 0.04);
   }
 
   for (const marker of markers) {
-    marker.setAlpha(Math.abs(playerX - marker.x) < activeDistance ? 0.92 : 0.24);
+    marker.setAlpha(Math.abs(playerX - marker.x) < activeDistance ? 1 : 0.24);
   }
 }
 
@@ -60,7 +60,7 @@ export function findNearestLadder(
   playerX: number,
   currentLevelIndex: number,
   direction: 'up' | 'down',
-  maxDistance = 148,
+  maxDistance = 170,
 ): LadderLink | null {
   const candidates = LADDERS.filter((ladder) =>
     direction === 'up'

@@ -8,7 +8,6 @@ export class FeedbackSystem {
 
     this.flashRect = scene.add
       .rectangle(width / 2, height / 2, width, height, 0xffffff, 0)
-      .setScrollFactor(0)
       .setDepth(40)
       .setVisible(false);
 
@@ -17,9 +16,9 @@ export class FeedbackSystem {
         fontFamily: 'Arial Black, Arial, sans-serif',
         fontSize: '28px',
         color: '#ffcf7d',
-        align: 'center',
         stroke: '#120d08',
         strokeThickness: 6,
+        align: 'center',
       })
       .setOrigin(0.5)
       .setDepth(41)
@@ -30,9 +29,9 @@ export class FeedbackSystem {
         fontFamily: 'Arial, sans-serif',
         fontSize: '14px',
         color: '#f3e9dc',
-        align: 'center',
         stroke: '#120d08',
         strokeThickness: 4,
+        align: 'center',
       })
       .setOrigin(0.5)
       .setDepth(41)
@@ -54,7 +53,7 @@ export class FeedbackSystem {
     });
   }
 
-  showBanner(title: string, subtitle = '', duration = 850): void {
+  showBanner(title: string, subtitle = '', duration = 800): void {
     this.scene.tweens.killTweensOf([this.titleText, this.subtitleText]);
 
     this.titleText.setText(title).setAlpha(1).setVisible(true);
@@ -73,7 +72,7 @@ export class FeedbackSystem {
     });
   }
 
-  pulse(target: Phaser.GameObjects.Container | Phaser.GameObjects.Image | Phaser.GameObjects.Sprite): void {
+  pulse(target: Phaser.GameObjects.Container): void {
     this.scene.tweens.killTweensOf(target);
     this.scene.tweens.add({
       targets: target,

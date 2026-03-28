@@ -1,9 +1,6 @@
 import { MusicController } from '../../audio/music.js';
 import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
-import {
-  PLATFORM_YS,
-  getPlayerYForLevel,
-} from '../level/LevelModel.js';
+import { PLATFORM_YS, getPlayerYForLevel } from '../level/LevelModel.js';
 import { BarrelSystem } from '../systems/BarrelSystem.js';
 import { FeedbackSystem } from '../systems/FeedbackSystem.js';
 import {
@@ -15,6 +12,13 @@ import {
 const HIGH_SCORE_KEY = 'barrel-beat-high-score';
 
 type ActiveClimb = {
+  x: number;
+  targetLevel: number;
+  targetY: number;
+  direction: -1 | 1;
+};
+
+type LadderSnap = {
   x: number;
   targetLevel: number;
   targetY: number;
@@ -48,6 +52,8 @@ export class PlayScene extends Phaser.Scene {
 
   private currentLevelIndex = 0;
   private activeClimb: ActiveClimb | null = null;
+  private snapToLadder: LadderSnap | null = null;
+  private lastLadderHintAt = 0;
 
   private leftPressed = false;
   private rightPressed = false;
@@ -136,7 +142,7 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!this.gameOver && this.started && !this.activeClimb) {
+      if (!this.gameOver && this.started && !this.activeClimb && !this.snapToLadder) {
         this.player.x = Phaser.Math.Clamp(pointer.x, 18, width - 18);
       }
     });
@@ -190,6 +196,7 @@ export class PlayScene extends Phaser.Scene {
     this.rightPressed = false;
     this.upPressed = false;
     this.downPressed = false;
+    this.snapToLadder = null;
     document.getElementById('gameover-overlay')?.classList.add('hidden');
     document.getElementById('start-overlay')?.classList.add('hidden');
     this.scene.restart();
@@ -319,44 +326,51 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private tryStartClimb(): void {
-    if (this.activeClimb) return;
+    if (this.activeClimb || this.snapToLadder) return;
 
     const wantsUp = this.cursors.up?.isDown || this.upPressed;
     const wantsDown = this.cursors.down?.isDown || this.downPressed;
 
-    if (wantsUp) {
-      const ladder = findNearestLadder(this.player.x, this.currentLevelIndex, 'up', 148);
-      if (ladder) {
-        this.player.x = Phaser.Math.Linear(this.player.x, ladder.x, 0.32);
+    if (!wantsUp && !wantsDown) return;
 
-        if (Math.abs(this.player.x - ladder.x) < 9) {
-          this.activeClimb = {
-            x: ladder.x,
-            targetLevel: ladder.to,
-            targetY: getPlayerYForLevel(ladder.to),
-            direction: -1,
-          };
-          this.feedback.showBanner('CLIMB', 'Keep moving up', 520);
-        }
-        return;
+    const direction: 'up' | 'down' = wantsUp ? 'up' : 'down';
+    const ladder = findNearestLadder(this.player.x, this.currentLevelIndex, direction, 170);
+
+    if (!ladder) {
+      if (this.time.now - this.lastLadderHintAt > 650) {
+        this.feedback.showBanner('MOVE TO ⇅', 'Stand near a ladder', 520);
+        this.lastLadderHintAt = this.time.now;
       }
+      return;
     }
 
-    if (wantsDown) {
-      const ladder = findNearestLadder(this.player.x, this.currentLevelIndex, 'down', 148);
-      if (ladder) {
-        this.player.x = Phaser.Math.Linear(this.player.x, ladder.x, 0.32);
+    this.snapToLadder = {
+      x: ladder.x,
+      targetLevel: direction === 'up' ? ladder.to : ladder.from,
+      targetY: getPlayerYForLevel(direction === 'up' ? ladder.to : ladder.from),
+      direction: direction === 'up' ? -1 : 1,
+    };
+  }
 
-        if (Math.abs(this.player.x - ladder.x) < 9) {
-          this.activeClimb = {
-            x: ladder.x,
-            targetLevel: ladder.from,
-            targetY: getPlayerYForLevel(ladder.from),
-            direction: 1,
-          };
-          this.feedback.showBanner('DOWN', '', 380);
-        }
-      }
+  private updateSnapToLadder(): void {
+    if (!this.snapToLadder) return;
+
+    this.player.x = Phaser.Math.Linear(this.player.x, this.snapToLadder.x, 0.48);
+
+    if (Math.abs(this.player.x - this.snapToLadder.x) < 4) {
+      this.player.x = this.snapToLadder.x;
+      this.activeClimb = {
+        x: this.snapToLadder.x,
+        targetLevel: this.snapToLadder.targetLevel,
+        targetY: this.snapToLadder.targetY,
+        direction: this.snapToLadder.direction,
+      };
+      this.snapToLadder = null;
+      this.feedback.showBanner(
+        this.activeClimb.direction === -1 ? 'CLIMB' : 'DOWN',
+        '',
+        380,
+      );
     }
   }
 
@@ -415,6 +429,7 @@ export class PlayScene extends Phaser.Scene {
   private resetPlayerToBottom(): void {
     this.currentLevelIndex = 0;
     this.activeClimb = null;
+    this.snapToLadder = null;
     this.playerBody.setVelocity(0);
     this.player.x = 42;
     this.player.y = getPlayerYForLevel(0);
@@ -447,15 +462,19 @@ export class PlayScene extends Phaser.Scene {
 
     const movingLeft = this.cursors.left?.isDown || this.leftPressed;
     const movingRight = this.cursors.right?.isDown || this.rightPressed;
+    const wantsVertical =
+      this.cursors.up?.isDown || this.upPressed || this.cursors.down?.isDown || this.downPressed;
 
-    updateLadderVisuals(this.player.x, this.ladderHints, this.ladderMarkers, 148);
+    updateLadderVisuals(this.player.x, this.ladderHints, this.ladderMarkers, 170);
 
     if (this.activeClimb) {
       this.updateClimb();
+    } else if (this.snapToLadder) {
+      this.updateSnapToLadder();
     } else {
       this.player.y = getPlayerYForLevel(this.currentLevelIndex);
 
-      if (!(this.cursors.up?.isDown || this.upPressed || this.cursors.down?.isDown || this.downPressed)) {
+      if (!wantsVertical) {
         if (movingLeft) {
           this.player.x -= 3.6;
         } else if (movingRight) {
