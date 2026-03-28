@@ -7,6 +7,7 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Barrel Beat</title>
+    <meta name="theme-color" content="#120d08" />
     <link rel="icon" href="data:," />
     <style>
       :root {
@@ -66,6 +67,105 @@
       .control-btn:active {
         transform: scale(0.98);
       }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(7, 5, 3, 0.68);
+        backdrop-filter: blur(8px);
+      }
+      .overlay.hidden {
+        display: none;
+      }
+      .card {
+        width: min(100%, 360px);
+        border: 1px solid rgba(255, 179, 71, 0.28);
+        border-radius: 24px;
+        padding: 24px 20px;
+        background:
+          linear-gradient(180deg, rgba(33, 21, 10, 0.92), rgba(18, 13, 8, 0.96));
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.38);
+        text-align: center;
+      }
+      .eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #ffcf7d;
+        opacity: 0.9;
+        margin-bottom: 10px;
+      }
+      .title {
+        margin: 0;
+        font-size: 40px;
+        line-height: 0.95;
+        color: #ffb347;
+      }
+      .subtitle {
+        margin: 14px 0 0;
+        color: #f3e9dc;
+        font-size: 15px;
+        line-height: 1.45;
+        opacity: 0.92;
+      }
+      .meta {
+        margin-top: 16px;
+        font-size: 13px;
+        color: #d8c3aa;
+        opacity: 0.9;
+      }
+      .actions {
+        display: grid;
+        gap: 12px;
+        margin-top: 22px;
+      }
+      .primary-btn,
+      .secondary-btn {
+        width: 100%;
+        min-height: 52px;
+        border-radius: 16px;
+        font-size: 17px;
+        font-weight: 700;
+        border: none;
+      }
+      .primary-btn {
+        background: linear-gradient(180deg, #ffb347, #e18b17);
+        color: #1c1208;
+      }
+      .secondary-btn {
+        background: rgba(255, 179, 71, 0.12);
+        color: #ffcf7d;
+        border: 1px solid rgba(255, 179, 71, 0.28);
+      }
+      .stats {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 18px;
+      }
+      .stat {
+        flex: 1;
+        border-radius: 14px;
+        padding: 12px;
+        background: rgba(255, 179, 71, 0.08);
+        border: 1px solid rgba(255, 179, 71, 0.16);
+      }
+      .stat-label {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #d8c3aa;
+      }
+      .stat-value {
+        margin-top: 6px;
+        font-size: 24px;
+        font-weight: 800;
+        color: #ffffff;
+      }
       canvas {
         display: block;
         margin: 0 auto;
@@ -80,6 +180,43 @@
     <div class="controls">
       <button id="control-left" class="control-btn" aria-label="Move left">◀</button>
       <button id="control-right" class="control-btn" aria-label="Move right">▶</button>
+    </div>
+
+    <div id="start-overlay" class="overlay">
+      <div class="card">
+        <div class="eyebrow">Retro mobile game</div>
+        <h1 class="title">BARREL<br />BEAT</h1>
+        <p class="subtitle">
+          Dodge the barrels. Survive the rhythm. Beat your best score.
+        </p>
+        <div class="meta">Built for fast replay • mobile first • arcade loop</div>
+        <div class="actions">
+          <button id="start-button" class="primary-btn">Play</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="gameover-overlay" class="overlay hidden">
+      <div class="card">
+        <div class="eyebrow">Run complete</div>
+        <h2 class="title" style="font-size: 34px;">GAME OVER</h2>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Score</div>
+            <div id="final-score" class="stat-value">0</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Best</div>
+            <div id="best-score" class="stat-value">0</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="restart-button" class="primary-btn">Play Again</button>
+          <button id="share-button" class="secondary-btn">Share Score</button>
+        </div>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>

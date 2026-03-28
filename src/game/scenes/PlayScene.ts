@@ -8,8 +8,6 @@ export class PlayScene extends Phaser.Scene {
   private barrels!: Phaser.Physics.Arcade.Group;
   private scoreText!: Phaser.GameObjects.Text;
   private bestText!: Phaser.GameObjects.Text;
-  private centerText!: Phaser.GameObjects.Text;
-  private hintText!: Phaser.GameObjects.Text;
   private score = 0;
   private best = 0;
   private gameOver = false;
@@ -73,25 +71,6 @@ export class PlayScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(1, 0);
 
-    this.centerText = this.add.text(width / 2, height / 2 - 30, 'TAP TO START', {
-      fontFamily: 'Arial Black, Arial, sans-serif',
-      fontSize: '30px',
-      color: '#ffb347',
-      align: 'center',
-    }).setOrigin(0.5);
-
-    this.hintText = this.add.text(
-      width / 2,
-      height / 2 + 36,
-      'Move left/right • survive as long as possible',
-      {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        color: '#f3e9dc',
-        align: 'center',
-      },
-    ).setOrigin(0.5);
-
     this.physics.add.overlap(
       this.player,
       this.barrels,
@@ -99,16 +78,6 @@ export class PlayScene extends Phaser.Scene {
       undefined,
       this,
     );
-
-    this.input.once('pointerdown', () => {
-      this.beginRun();
-    });
-
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!this.gameOver && this.started) {
-        this.player.x = Phaser.Math.Clamp(pointer.x, 18, width - 18);
-      }
-    });
 
     this.time.addEvent({
       delay: 850,
@@ -127,6 +96,12 @@ export class PlayScene extends Phaser.Scene {
       },
     });
 
+    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+      if (!this.gameOver && this.started) {
+        this.player.x = Phaser.Math.Clamp(pointer.x, 18, width - 18);
+      }
+    });
+
     this.setupDomControls();
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -135,17 +110,17 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private beginRun(): void {
-    if (this.started) return;
-    this.started = true;
-    this.centerText.setVisible(false);
-    this.hintText.setVisible(false);
-    this.music.start();
-  }
-
   private setupDomControls(): void {
     const leftButton = document.getElementById('control-left');
     const rightButton = document.getElementById('control-right');
+    const startOverlay = document.getElementById('start-overlay');
+    const gameoverOverlay = document.getElementById('gameover-overlay');
+    const startButton = document.getElementById('start-button');
+    const restartButton = document.getElementById('restart-button');
+    const shareButton = document.getElementById('share-button');
+
+    if (startOverlay) startOverlay.classList.remove('hidden');
+    if (gameoverOverlay) gameoverOverlay.classList.add('hidden');
 
     const bindHold = (
       element: HTMLElement | null,
@@ -190,6 +165,56 @@ export class PlayScene extends Phaser.Scene {
     bindHold(rightButton, (value) => {
       this.rightPressed = value;
     });
+
+    const startHandler = (event: Event) => {
+      event.preventDefault();
+      this.beginRun();
+    };
+
+    const restartHandler = (event: Event) => {
+      event.preventDefault();
+      this.scene.restart();
+    };
+
+    const shareHandler = async (event: Event) => {
+      event.preventDefault();
+      const text = `I scored ${this.score} on Barrel Beat. Can you beat me?`;
+
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: 'Barrel Beat',
+            text,
+            url: window.location.href,
+          });
+          return;
+        }
+
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(`${text} ${window.location.href}`);
+        }
+      } catch {
+        // no-op
+      }
+    };
+
+    startButton?.addEventListener('click', startHandler);
+    restartButton?.addEventListener('click', restartHandler);
+    shareButton?.addEventListener('click', shareHandler);
+
+    this.domCleanup.push(() => startButton?.removeEventListener('click', startHandler));
+    this.domCleanup.push(() => restartButton?.removeEventListener('click', restartHandler));
+    this.domCleanup.push(() => shareButton?.removeEventListener('click', shareHandler));
+  }
+
+  private beginRun(): void {
+    if (this.started) return;
+    this.started = true;
+
+    document.getElementById('start-overlay')?.classList.add('hidden');
+    document.getElementById('gameover-overlay')?.classList.add('hidden');
+
+    this.music.start();
   }
 
   private spawnBarrel(): void {
@@ -224,19 +249,16 @@ export class PlayScene extends Phaser.Scene {
       this.bestText.setText(`BEST ${this.best}`);
     }
 
+    const finalScore = document.getElementById('final-score');
+    const bestScore = document.getElementById('best-score');
+    const gameoverOverlay = document.getElementById('gameover-overlay');
+
+    if (finalScore) finalScore.textContent = String(this.score);
+    if (bestScore) bestScore.textContent = String(this.best);
+    gameoverOverlay?.classList.remove('hidden');
+
     this.cameras.main.shake(180, 0.01);
-
-    this.centerText
-      .setText(`GAME OVER\nSCORE ${this.score}\nBEST ${this.best}`)
-      .setVisible(true);
-
-    this.hintText
-      .setText('Tap anywhere to restart')
-      .setVisible(true);
-
-    this.input.once('pointerdown', () => {
-      this.scene.restart();
-    });
+    this.music.stop();
   }
 
   update(): void {
