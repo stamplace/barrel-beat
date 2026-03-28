@@ -26,9 +26,12 @@ export class PlayScene extends Phaser.Scene {
     { x: 305, from: 5, to: 6 },
   ];
 
-  private player!: Phaser.GameObjects.Rectangle;
-  private goal!: Phaser.GameObjects.Rectangle;
+  private player!: Phaser.GameObjects.Container;
+  private playerBody!: Phaser.Physics.Arcade.Body;
+  private goal!: Phaser.GameObjects.Container;
+  private boss!: Phaser.GameObjects.Container;
   private barrels!: Phaser.Physics.Arcade.Group;
+  private ladderHints: Phaser.GameObjects.Rectangle[] = [];
 
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private scoreText!: Phaser.GameObjects.Text;
@@ -64,17 +67,20 @@ export class PlayScene extends Phaser.Scene {
     this.best = Number(window.localStorage.getItem(HIGH_SCORE_KEY) ?? '0');
 
     this.cameras.main.setBackgroundColor('#120d08');
-
     this.drawWorld();
 
-    this.player = this.add.rectangle(42, this.getPlayerYForLevel(0), 26, 30, 0xffd166);
+    this.player = this.createHero(42, this.getPlayerYForLevel(0));
     this.physics.add.existing(this.player);
-    const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-    playerBody.setAllowGravity(false);
-    playerBody.setCollideWorldBounds(true);
+    this.playerBody = this.player.body as Phaser.Physics.Arcade.Body;
+    this.playerBody.setAllowGravity(false);
+    this.playerBody.setCollideWorldBounds(true);
+    this.playerBody.setSize(24, 34);
+    this.playerBody.setOffset(-12, -17);
 
-    this.goal = this.add.rectangle(width - 40, this.platformYs[this.platformYs.length - 1] - 24, 28, 42, 0x7dd3fc);
+    this.goal = this.createGoal(width - 42, this.platformYs[this.platformYs.length - 1] - 22);
     this.physics.add.existing(this.goal, true);
+
+    this.boss = this.createBoss(width - 88, this.platformYs[this.platformYs.length - 1] - 8);
 
     this.barrels = this.physics.add.group({
       allowGravity: false,
@@ -112,7 +118,6 @@ export class PlayScene extends Phaser.Scene {
       fontSize: '24px',
       color: '#ffcf7d',
       align: 'center',
-      backgroundColor: 'rgba(0,0,0,0.18)',
     }).setOrigin(0.5);
 
     this.physics.add.overlap(
@@ -132,7 +137,7 @@ export class PlayScene extends Phaser.Scene {
     );
 
     this.time.addEvent({
-      delay: 1700,
+      delay: 1550,
       loop: true,
       callback: this.spawnBarrel,
       callbackScope: this,
@@ -162,6 +167,43 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  private createHero(x: number, y: number): Phaser.GameObjects.Container {
+    const body = this.add.rectangle(0, 6, 18, 18, 0xff7b00);
+    const head = this.add.circle(0, -10, 8, 0xffdfb5);
+    const hat = this.add.rectangle(0, -17, 18, 5, 0xd62828);
+    const legL = this.add.rectangle(-5, 19, 4, 10, 0x60a5fa);
+    const legR = this.add.rectangle(5, 19, 4, 10, 0x60a5fa);
+    const armL = this.add.rectangle(-12, 5, 4, 10, 0xffdfb5);
+    const armR = this.add.rectangle(12, 5, 4, 10, 0xffdfb5);
+
+    return this.add.container(x, y, [legL, legR, armL, armR, body, head, hat]);
+  }
+
+  private createGoal(x: number, y: number): Phaser.GameObjects.Container {
+    const glow = this.add.circle(0, -8, 14, 0x38bdf8, 0.35);
+    const beacon = this.add.rectangle(0, 0, 12, 32, 0x7dd3fc);
+    const top = this.add.circle(0, -18, 8, 0xe0f2fe);
+    return this.add.container(x, y, [glow, beacon, top]);
+  }
+
+  private createBoss(x: number, y: number): Phaser.GameObjects.Container {
+    const body = this.add.ellipse(0, 0, 46, 34, 0x8b4513);
+    const head = this.add.circle(-4, -22, 12, 0xb45309);
+    const eyeL = this.add.circle(-8, -24, 2, 0xffffff);
+    const eyeR = this.add.circle(0, -24, 2, 0xffffff);
+    const arm = this.add.rectangle(18, -2, 20, 8, 0x8b4513);
+    const barrel = this.add.circle(28, 2, 8, 0xd97706);
+    return this.add.container(x, y, [body, head, eyeL, eyeR, arm, barrel]);
+  }
+
+  private createBarrel(x: number, y: number): Phaser.GameObjects.Container {
+    const outer = this.add.circle(0, 0, 13, 0xd97706);
+    const bandL = this.add.rectangle(-6, 0, 3, 22, 0x78350f);
+    const bandR = this.add.rectangle(6, 0, 3, 22, 0x78350f);
+    const middle = this.add.rectangle(0, 0, 4, 22, 0x92400e);
+    return this.add.container(x, y, [outer, bandL, bandR, middle]);
+  }
+
   private drawWorld(): void {
     const { width } = this.scale;
 
@@ -180,7 +222,11 @@ export class PlayScene extends Phaser.Scene {
     for (let i = 0; i < this.platformYs.length; i += 1) {
       const y = this.platformYs[i];
       const color = i % 2 === 0 ? 0x6b3f1d : 0x7a4520;
-      this.add.rectangle(width / 2, y, width - 28, 10, color).setOrigin(0.5);
+      this.add.rectangle(width / 2, y, width - 28, 12, color).setOrigin(0.5);
+
+      for (let x = 26; x < width - 20; x += 28) {
+        this.add.rectangle(x, y - 4, 14, 2, 0x2b1607, 0.28).setOrigin(0.5);
+      }
     }
 
     for (const ladder of this.ladders) {
@@ -189,19 +235,15 @@ export class PlayScene extends Phaser.Scene {
       const centerY = (yTop + yBottom) / 2;
       const ladderHeight = yBottom - yTop - 18;
 
+      const hint = this.add.rectangle(ladder.x, centerY, 36, ladderHeight + 18, 0xfbbf24, 0.04).setOrigin(0.5);
+      this.ladderHints.push(hint);
+
       this.add.rectangle(ladder.x, centerY, 10, ladderHeight, 0x94a3b8).setOrigin(0.5);
 
       for (let y = yTop + 16; y < yBottom - 12; y += 18) {
         this.add.rectangle(ladder.x, y, 26, 4, 0xcbd5e1).setOrigin(0.5);
       }
     }
-
-    this.add.circle(width - 40, this.platformYs[this.platformYs.length - 1] - 36, 12, 0x38bdf8);
-    this.add.text(width - 40, this.platformYs[this.platformYs.length - 1] - 62, 'GOAL', {
-      fontFamily: 'Arial, sans-serif',
-      fontSize: '11px',
-      color: '#bae6fd',
-    }).setOrigin(0.5);
   }
 
   private setupDomControls(): void {
@@ -243,21 +285,10 @@ export class PlayScene extends Phaser.Scene {
       });
     };
 
-    bindHold('control-left', (value) => {
-      this.leftPressed = value;
-    }, true);
-
-    bindHold('control-right', (value) => {
-      this.rightPressed = value;
-    }, true);
-
-    bindHold('control-up', (value) => {
-      this.upPressed = value;
-    }, true);
-
-    bindHold('control-down', (value) => {
-      this.downPressed = value;
-    }, true);
+    bindHold('control-left', (value) => { this.leftPressed = value; }, true);
+    bindHold('control-right', (value) => { this.rightPressed = value; }, true);
+    bindHold('control-up', (value) => { this.upPressed = value; }, true);
+    bindHold('control-down', (value) => { this.downPressed = value; }, true);
 
     const startOverlay = document.getElementById('start-overlay');
     const gameoverOverlay = document.getElementById('gameover-overlay');
@@ -319,7 +350,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private getPlayerYForLevel(levelIndex: number): number {
-    return this.platformYs[levelIndex] - 20;
+    return this.platformYs[levelIndex] - 24;
   }
 
   private spawnBarrel(): void {
@@ -327,19 +358,42 @@ export class PlayScene extends Phaser.Scene {
 
     const row = Phaser.Math.Between(1, this.platformYs.length - 1);
     const fromLeft = row % 2 === 0;
-    const barrel = this.add.circle(
+    const barrel = this.createBarrel(
       fromLeft ? -20 : this.scale.width + 20,
-      this.platformYs[row] - 16,
-      13,
-      0xd97706,
+      this.platformYs[row] - 18,
     );
 
     this.physics.add.existing(barrel);
     const body = barrel.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
+    body.setCircle(13);
+    body.setOffset(-13, -13);
     body.setVelocityX((fromLeft ? 1 : -1) * (130 + this.stage * 24));
 
     this.barrels.add(barrel);
+  }
+
+  private findNearestLadder(direction: 'up' | 'down'): LadderLink | null {
+    const candidates = this.ladders.filter((ladder) => {
+      return direction === 'up'
+        ? this.currentLevelIndex === ladder.from
+        : this.currentLevelIndex === ladder.to;
+    });
+
+    if (candidates.length === 0) return null;
+
+    let nearest: LadderLink | null = null;
+    let nearestDistance = Infinity;
+
+    for (const ladder of candidates) {
+      const distance = Math.abs(this.player.x - ladder.x);
+      if (distance < nearestDistance) {
+        nearest = ladder;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearestDistance <= 42 ? nearest : null;
   }
 
   private tryStartClimb(): void {
@@ -348,29 +402,30 @@ export class PlayScene extends Phaser.Scene {
     const wantsUp = this.cursors.up?.isDown || this.upPressed;
     const wantsDown = this.cursors.down?.isDown || this.downPressed;
 
-    for (const ladder of this.ladders) {
-      const nearLadder = Math.abs(this.player.x - ladder.x) < 20;
-
-      if (!nearLadder) continue;
-
-      if (wantsUp && this.currentLevelIndex === ladder.from) {
+    if (wantsUp) {
+      const ladder = this.findNearestLadder('up');
+      if (ladder) {
         this.activeClimb = {
           x: ladder.x,
           targetLevel: ladder.to,
           targetY: this.getPlayerYForLevel(ladder.to),
           direction: -1,
         };
+        this.showMessage('CLIMB');
         return;
       }
+    }
 
-      if (wantsDown && this.currentLevelIndex === ladder.to) {
+    if (wantsDown) {
+      const ladder = this.findNearestLadder('down');
+      if (ladder) {
         this.activeClimb = {
           x: ladder.x,
           targetLevel: ladder.from,
           targetY: this.getPlayerYForLevel(ladder.from),
           direction: 1,
         };
-        return;
+        this.showMessage('DOWN');
       }
     }
   }
@@ -378,10 +433,8 @@ export class PlayScene extends Phaser.Scene {
   private updateClimb(): void {
     if (!this.activeClimb) return;
 
-    const body = this.player.body as Phaser.Physics.Arcade.Body;
-    this.player.x = this.activeClimb.x;
-    body.setVelocityX(0);
-    body.setVelocityY(this.activeClimb.direction * 180);
+    this.player.x = Phaser.Math.Linear(this.player.x, this.activeClimb.x, 0.32);
+    this.player.y += this.activeClimb.direction * 3.2;
 
     const reached =
       this.activeClimb.direction === -1
@@ -390,7 +443,6 @@ export class PlayScene extends Phaser.Scene {
 
     if (reached) {
       this.player.y = this.activeClimb.targetY;
-      body.setVelocityY(0);
       this.currentLevelIndex = this.activeClimb.targetLevel;
       this.activeClimb = null;
     }
@@ -410,13 +462,13 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    this.showMessage('HIT! KEEP CLIMBING');
+    this.showMessage('HIT!');
   }
 
   private onGoalReached(): void {
     if (!this.started || this.gameOver) return;
     if (this.currentLevelIndex !== this.platformYs.length - 1) return;
-    if (this.player.x < this.scale.width - 72) return;
+    if (this.player.x < this.scale.width - 82) return;
 
     this.stage += 1;
     this.score += 250;
@@ -430,14 +482,13 @@ export class PlayScene extends Phaser.Scene {
   private resetPlayerToBottom(): void {
     this.currentLevelIndex = 0;
     this.activeClimb = null;
-    const body = this.player.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0);
+    this.playerBody.setVelocity(0);
     this.player.x = 42;
     this.player.y = this.getPlayerYForLevel(0);
   }
 
   private clearBarrels(): void {
-    const children = this.barrels.getChildren() as Phaser.GameObjects.Arc[];
+    const children = this.barrels.getChildren() as Phaser.GameObjects.Container[];
     for (const barrel of children) {
       barrel.destroy();
     }
@@ -445,7 +496,7 @@ export class PlayScene extends Phaser.Scene {
 
   private showMessage(text: string): void {
     this.messageText.setText(text).setVisible(true);
-    this.time.delayedCall(900, () => {
+    this.time.delayedCall(700, () => {
       if (!this.gameOver && this.started) {
         this.messageText.setVisible(false);
       }
@@ -477,32 +528,35 @@ export class PlayScene extends Phaser.Scene {
   update(): void {
     if (this.gameOver || !this.started) return;
 
-    const body = this.player.body as Phaser.Physics.Arcade.Body;
     const movingLeft = this.cursors.left?.isDown || this.leftPressed;
     const movingRight = this.cursors.right?.isDown || this.rightPressed;
+
+    for (const hint of this.ladderHints) {
+      hint.setAlpha(Math.abs(this.player.x - hint.x) < 40 ? 0.16 : 0.04);
+    }
 
     if (this.activeClimb) {
       this.updateClimb();
     } else {
-      body.setVelocityY(0);
       this.player.y = this.getPlayerYForLevel(this.currentLevelIndex);
 
       if (movingLeft) {
-        body.setVelocityX(-220);
+        this.player.x -= 3.2;
       } else if (movingRight) {
-        body.setVelocityX(220);
-      } else {
-        body.setVelocityX(0);
+        this.player.x += 3.2;
       }
 
+      this.player.x = Phaser.Math.Clamp(this.player.x, 18, this.scale.width - 18);
       this.tryStartClimb();
     }
 
-    const children = this.barrels.getChildren() as Phaser.GameObjects.Arc[];
+    const children = this.barrels.getChildren() as Phaser.GameObjects.Container[];
     for (const barrel of children) {
       if (barrel.x < -40 || barrel.x > this.scale.width + 40) {
         barrel.destroy();
       }
     }
+
+    this.boss.y = this.platformYs[this.platformYs.length - 1] - 8 + Math.sin(this.time.now / 180) * 2;
   }
 }
