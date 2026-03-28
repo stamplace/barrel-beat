@@ -67,7 +67,25 @@ export class PlayScene extends Phaser.Scene {
     super('play');
   }
 
+  private resetSceneState(): void {
+    this.score = 0;
+    this.lives = 3;
+    this.stage = 1;
+    this.gameOver = false;
+    this.started = false;
+    this.currentLevelIndex = 0;
+    this.activeClimb = null;
+    this.snapToLadder = null;
+    this.leftPressed = false;
+    this.rightPressed = false;
+    this.upPressed = false;
+    this.downPressed = false;
+    this.lastLadderHintAt = 0;
+  }
+
   create(): void {
+    this.resetSceneState();
+
     const { width, height } = this.scale;
     this.best = Number(window.localStorage.getItem(HIGH_SCORE_KEY) ?? '0');
 
@@ -139,12 +157,6 @@ export class PlayScene extends Phaser.Scene {
         this.score += 1;
         this.scoreText.setText(`SCORE ${this.score}`);
       },
-    });
-
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!this.gameOver && this.started && !this.activeClimb && !this.snapToLadder) {
-        this.player.x = Phaser.Math.Clamp(pointer.x, 18, width - 18);
-      }
     });
 
     this.setupDomControls();

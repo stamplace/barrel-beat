@@ -23,53 +23,83 @@
           linear-gradient(180deg, #1b120a 0%, #120d08 100%);
         font-family: Arial, sans-serif;
       }
-      body { overflow: hidden; }
-      #game-root { width: 100vw; height: 100vh; }
+      body {
+        overflow: hidden;
+      }
+
+      /* Mobile canonical shell */
+      #app-shell {
+        position: relative;
+        width: min(100vw, 430px);
+        height: 100dvh;
+        margin: 0 auto;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top, rgba(255, 179, 71, 0.08), transparent 40%),
+          linear-gradient(180deg, #1b120a 0%, #120d08 100%);
+        border-left: 1px solid rgba(255, 179, 71, 0.08);
+        border-right: 1px solid rgba(255, 179, 71, 0.08);
+      }
+
+      #game-root {
+        width: 100%;
+        height: 100%;
+      }
+
       .hud {
-        position: fixed;
+        position: absolute;
         left: 12px;
-        bottom: 88px;
+        bottom: calc(82px + env(safe-area-inset-bottom));
         z-index: 10;
         font-size: 12px;
         color: #f3e9dc;
         opacity: 0.68;
         pointer-events: none;
       }
+
       .controls {
-        position: fixed;
+        position: absolute;
         left: 0;
         right: 0;
-        bottom: 12px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
         z-index: 20;
         display: flex;
         justify-content: space-between;
         align-items: end;
-        padding: 0 14px calc(env(safe-area-inset-bottom) + 4px);
+        padding: 0 14px;
         pointer-events: none;
       }
+
       .controls-group {
         display: flex;
         gap: 8px;
         pointer-events: auto;
       }
-      .controls-group.vertical { flex-direction: column; }
+
+      .controls-group.vertical {
+        flex-direction: column;
+      }
+
       .control-btn {
-        width: 54px;
-        height: 42px;
+        width: 56px;
+        height: 48px;
         border: 1px solid rgba(255, 205, 140, 0.14);
         border-radius: 12px;
-        background: rgba(255, 179, 71, 0.06);
-        color: rgba(255, 220, 168, 0.9);
+        background: rgba(255, 179, 71, 0.08);
+        color: rgba(255, 220, 168, 0.92);
         font-size: 18px;
         font-weight: 700;
         backdrop-filter: blur(4px);
+        touch-action: manipulation;
       }
+
       .control-btn:active {
         transform: scale(0.98);
-        background: rgba(255, 179, 71, 0.12);
+        background: rgba(255, 179, 71, 0.14);
       }
+
       .overlay {
-        position: fixed;
+        position: absolute;
         inset: 0;
         z-index: 30;
         display: flex;
@@ -79,7 +109,11 @@
         background: rgba(7, 5, 3, 0.68);
         backdrop-filter: blur(8px);
       }
-      .overlay.hidden { display: none; }
+
+      .overlay.hidden {
+        display: none;
+      }
+
       .card {
         width: min(100%, 360px);
         border: 1px solid rgba(255, 179, 71, 0.22);
@@ -90,6 +124,7 @@
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.38);
         text-align: center;
       }
+
       .eyebrow {
         font-size: 12px;
         letter-spacing: 0.18em;
@@ -98,12 +133,14 @@
         opacity: 0.9;
         margin-bottom: 10px;
       }
+
       .title {
         margin: 0;
         font-size: 40px;
         line-height: 0.95;
         color: #ffb347;
       }
+
       .subtitle {
         margin: 14px 0 0;
         color: #f3e9dc;
@@ -111,17 +148,20 @@
         line-height: 1.45;
         opacity: 0.92;
       }
+
       .meta {
         margin-top: 16px;
         font-size: 13px;
         color: #d8c3aa;
         opacity: 0.9;
       }
+
       .actions {
         display: grid;
         gap: 12px;
         margin-top: 22px;
       }
+
       .primary-btn,
       .secondary-btn {
         width: 100%;
@@ -131,21 +171,25 @@
         font-weight: 700;
         border: none;
       }
+
       .primary-btn {
         background: linear-gradient(180deg, #ffb347, #e18b17);
         color: #1c1208;
       }
+
       .secondary-btn {
         background: rgba(255, 179, 71, 0.10);
         color: #ffcf7d;
         border: 1px solid rgba(255, 179, 71, 0.22);
       }
+
       .stats {
         display: flex;
         justify-content: center;
         gap: 14px;
         margin-top: 18px;
       }
+
       .stat {
         flex: 1;
         border-radius: 14px;
@@ -153,24 +197,28 @@
         background: rgba(255, 179, 71, 0.07);
         border: 1px solid rgba(255, 179, 71, 0.14);
       }
+
       .stat-label {
         font-size: 11px;
         letter-spacing: 0.12em;
         text-transform: uppercase;
         color: #d8c3aa;
       }
+
       .stat-value {
         margin-top: 6px;
         font-size: 24px;
         font-weight: 800;
         color: #ffffff;
       }
+
       .tap-note {
         margin-top: 12px;
         font-size: 12px;
         color: #d8c3aa;
         opacity: 0.85;
       }
+
       canvas {
         display: block;
         margin: 0 auto;
@@ -179,57 +227,59 @@
     </style>
   </head>
   <body>
-    <div id="game-root"></div>
-    <div class="hud">Barrel Beat • slice 01</div>
+    <div id="app-shell">
+      <div id="game-root"></div>
+      <div class="hud">Barrel Beat • mobile canonical</div>
 
-    <div class="controls">
-      <div class="controls-group">
-        <button id="control-left" class="control-btn" aria-label="Move left">◀</button>
-        <button id="control-right" class="control-btn" aria-label="Move right">▶</button>
-      </div>
+      <div class="controls">
+        <div class="controls-group">
+          <button id="control-left" class="control-btn" aria-label="Move left">◀</button>
+          <button id="control-right" class="control-btn" aria-label="Move right">▶</button>
+        </div>
 
-      <div class="controls-group vertical">
-        <button id="control-up" class="control-btn" aria-label="Climb up">▲</button>
-        <button id="control-down" class="control-btn" aria-label="Climb down">▼</button>
-      </div>
-    </div>
-
-    <div id="start-overlay" class="overlay">
-      <div class="card">
-        <div class="eyebrow">Arcade climb</div>
-        <h1 class="title">BARREL<br />BEAT</h1>
-        <p class="subtitle">
-          Climb the tower, dodge the barrels, and reach the beacon at the top.
-        </p>
-        <div class="meta">Move left/right • climb near ladders • survive</div>
-        <div class="actions">
-          <button id="start-button" class="primary-btn">Play</button>
+        <div class="controls-group vertical">
+          <button id="control-up" class="control-btn" aria-label="Climb up">▲</button>
+          <button id="control-down" class="control-btn" aria-label="Climb down">▼</button>
         </div>
       </div>
-    </div>
 
-    <div id="gameover-overlay" class="overlay hidden">
-      <div id="gameover-card" class="card">
-        <div class="eyebrow">Run complete</div>
-        <h2 class="title" style="font-size: 34px;">GAME OVER</h2>
-
-        <div class="stats">
-          <div class="stat">
-            <div class="stat-label">Score</div>
-            <div id="final-score" class="stat-value">0</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Best</div>
-            <div id="best-score" class="stat-value">0</div>
+      <div id="start-overlay" class="overlay">
+        <div class="card">
+          <div class="eyebrow">Arcade climb</div>
+          <h1 class="title">BARREL<br />BEAT</h1>
+          <p class="subtitle">
+            Climb the tower, dodge the barrels, and reach the beacon at the top.
+          </p>
+          <div class="meta">Buttons only • move left/right • climb near ladders</div>
+          <div class="actions">
+            <button id="start-button" class="primary-btn">Play</button>
           </div>
         </div>
+      </div>
 
-        <div class="actions">
-          <button id="restart-button" class="primary-btn">Play Again</button>
-          <button id="share-button" class="secondary-btn">Share Score</button>
+      <div id="gameover-overlay" class="overlay hidden">
+        <div id="gameover-card" class="card">
+          <div class="eyebrow">Run complete</div>
+          <h2 class="title" style="font-size: 34px;">GAME OVER</h2>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">Score</div>
+              <div id="final-score" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Best</div>
+              <div id="best-score" class="stat-value">0</div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="restart-button" class="primary-btn">Play Again</button>
+            <button id="share-button" class="secondary-btn">Share Score</button>
+          </div>
+
+          <div class="tap-note">Tap this card to restart</div>
         </div>
-
-        <div class="tap-note">Tap this card to restart</div>
       </div>
     </div>
 
