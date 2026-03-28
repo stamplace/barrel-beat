@@ -9,10 +9,16 @@ export class PlayScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private bestText!: Phaser.GameObjects.Text;
   private centerText!: Phaser.GameObjects.Text;
+  private hintText!: Phaser.GameObjects.Text;
   private score = 0;
   private best = 0;
   private gameOver = false;
+  private started = false;
   private music = new MusicController();
+
+  private leftPressed = false;
+  private rightPressed = false;
+  private domCleanup: Array<() => void> = [];
 
   constructor() {
     super('play');
@@ -30,7 +36,7 @@ export class PlayScene extends Phaser.Scene {
       color: '#ffb347',
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 72, 'Tap to start music • Move and survive', {
+    this.add.text(width / 2, 72, 'Retro survival runner', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '14px',
       color: '#f3e9dc',
@@ -67,12 +73,24 @@ export class PlayScene extends Phaser.Scene {
       color: '#ffffff',
     }).setOrigin(1, 0);
 
-    this.centerText = this.add.text(width / 2, height / 2, 'TAP TO PLAY', {
+    this.centerText = this.add.text(width / 2, height / 2 - 30, 'TAP TO START', {
       fontFamily: 'Arial Black, Arial, sans-serif',
       fontSize: '30px',
       color: '#ffb347',
       align: 'center',
     }).setOrigin(0.5);
+
+    this.hintText = this.add.text(
+      width / 2,
+      height / 2 + 36,
+      'Move left/right • survive as long as possible',
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        color: '#f3e9dc',
+        align: 'center',
+      },
+    ).setOrigin(0.5);
 
     this.physics.add.overlap(
       this.player,
@@ -83,12 +101,11 @@ export class PlayScene extends Phaser.Scene {
     );
 
     this.input.once('pointerdown', () => {
-      this.music.start();
-      this.centerText.setVisible(false);
+      this.beginRun();
     });
 
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (!this.gameOver) {
+      if (!this.gameOver && this.started) {
         this.player.x = Phaser.Math.Clamp(pointer.x, 18, width - 18);
       }
     });
@@ -104,15 +121,79 @@ export class PlayScene extends Phaser.Scene {
       delay: 120,
       loop: true,
       callback: () => {
-        if (this.gameOver || this.centerText.visible) return;
+        if (this.gameOver || !this.started) return;
         this.score += 1;
         this.scoreText.setText(`SCORE ${this.score}`);
       },
     });
+
+    this.setupDomControls();
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      for (const cleanup of this.domCleanup) cleanup();
+      this.domCleanup = [];
+    });
+  }
+
+  private beginRun(): void {
+    if (this.started) return;
+    this.started = true;
+    this.centerText.setVisible(false);
+    this.hintText.setVisible(false);
+    this.music.start();
+  }
+
+  private setupDomControls(): void {
+    const leftButton = document.getElementById('control-left');
+    const rightButton = document.getElementById('control-right');
+
+    const bindHold = (
+      element: HTMLElement | null,
+      onChange: (value: boolean) => void,
+    ): void => {
+      if (!element) return;
+
+      const press = (event: Event) => {
+        event.preventDefault();
+        onChange(true);
+        if (!this.started && !this.gameOver) {
+          this.beginRun();
+        }
+      };
+
+      const release = (event: Event) => {
+        event.preventDefault();
+        onChange(false);
+      };
+
+      element.addEventListener('pointerdown', press);
+      element.addEventListener('pointerup', release);
+      element.addEventListener('pointercancel', release);
+      element.addEventListener('pointerleave', release);
+      element.addEventListener('touchstart', press, { passive: false });
+      element.addEventListener('touchend', release, { passive: false });
+
+      this.domCleanup.push(() => {
+        element.removeEventListener('pointerdown', press);
+        element.removeEventListener('pointerup', release);
+        element.removeEventListener('pointercancel', release);
+        element.removeEventListener('pointerleave', release);
+        element.removeEventListener('touchstart', press);
+        element.removeEventListener('touchend', release);
+      });
+    };
+
+    bindHold(leftButton, (value) => {
+      this.leftPressed = value;
+    });
+
+    bindHold(rightButton, (value) => {
+      this.rightPressed = value;
+    });
   }
 
   private spawnBarrel(): void {
-    if (this.gameOver || this.centerText.visible) return;
+    if (this.gameOver || !this.started) return;
 
     const lanes = [160, 270, 380, 490, 600, 710];
     const laneY = Phaser.Utils.Array.GetRandom(lanes);
@@ -146,7 +227,11 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.shake(180, 0.01);
 
     this.centerText
-      .setText(`GAME OVER\nSCORE ${this.score}\nBEST ${this.best}\n\nTAP TO RESTART`)
+      .setText(`GAME OVER\nSCORE ${this.score}\nBEST ${this.best}`)
+      .setVisible(true);
+
+    this.hintText
+      .setText('Tap anywhere to restart')
       .setVisible(true);
 
     this.input.once('pointerdown', () => {
@@ -155,14 +240,14 @@ export class PlayScene extends Phaser.Scene {
   }
 
   update(): void {
-    if (this.gameOver || this.centerText.visible) return;
+    if (this.gameOver || !this.started) return;
 
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     body.setVelocityX(0);
 
-    if (this.cursors.left?.isDown) {
+    if (this.cursors.left?.isDown || this.leftPressed) {
       body.setVelocityX(-300);
-    } else if (this.cursors.right?.isDown) {
+    } else if (this.cursors.right?.isDown || this.rightPressed) {
       body.setVelocityX(300);
     }
 
