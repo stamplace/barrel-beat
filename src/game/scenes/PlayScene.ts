@@ -50,6 +50,8 @@ export class PlayScene extends Phaser.Scene {
   private moveMarker!: Phaser.GameObjects.Container;
   private bossWarning!: Phaser.GameObjects.Container;
   private heroParts: Record<string, Phaser.GameObjects.Shape> | null = null;
+  private bossParts: Record<string, any> | null = null;
+  private bossThrowPulseUntil = 0;
 
   private scoreText!: Phaser.GameObjects.Text;
   private bestText!: Phaser.GameObjects.Text;
@@ -91,6 +93,7 @@ export class PlayScene extends Phaser.Scene {
     this.lastLadderHintAt = 0;
     this.runStartedAt = 0;
     this.invulnerableUntil = 0;
+    this.bossThrowPulseUntil = 0;
   }
 
   create(): void {
@@ -115,6 +118,7 @@ export class PlayScene extends Phaser.Scene {
     this.physics.add.existing(this.goal, true);
 
     this.boss = createBoss(this, width - 118, PLATFORM_YS[PLATFORM_YS.length - 1] - 6);
+    this.bossParts = this.boss.getData('parts') as Record<string, any> | null;
 
     this.barrels = this.physics.add.group({
       allowGravity: false,
@@ -248,6 +252,58 @@ export class PlayScene extends Phaser.Scene {
     this.easeHeroPart('torso', 'angle', 0, 0.14);
     this.easeHeroPart('shadow', 'scaleX', 1, 0.12);
     this.easeHeroPart('shadow', 'alpha', 0.14, 0.12);
+  }
+
+  private easeBossPart(
+    key: string,
+    property: 'angle' | 'x' | 'y' | 'scaleX' | 'scaleY' | 'alpha',
+    target: number,
+    factor = 0.16,
+  ): void {
+    const part = this.bossParts?.[key] as any;
+    if (!part) return;
+    part[property] += (target - part[property]) * factor;
+  }
+
+  private updateBossAnimation(): void {
+    if (!this.bossParts) return;
+
+    const idle = Math.sin(this.time.now / 210);
+    const warningPose = this.bossWarning.visible;
+    const recoilPose = this.time.now < this.bossThrowPulseUntil;
+
+    if (warningPose) {
+      this.easeBossPart('armL', 'angle', -12, 0.22);
+      this.easeBossPart('armR', 'angle', -28, 0.22);
+      this.easeBossPart('fistR', 'x', 39, 0.22);
+      this.easeBossPart('heldBarrel', 'x', 34, 0.22);
+      this.easeBossPart('heldBarrel', 'y', 1, 0.22);
+      this.easeBossPart('head', 'y', -21, 0.2);
+      this.easeBossPart('torso', 'scaleY', 1.04, 0.16);
+      this.easeBossPart('shadow', 'scaleX', 1.06, 0.16);
+      return;
+    }
+
+    if (recoilPose) {
+      this.easeBossPart('armL', 'angle', 10, 0.24);
+      this.easeBossPart('armR', 'angle', 24, 0.24);
+      this.easeBossPart('fistR', 'x', 32, 0.24);
+      this.easeBossPart('heldBarrel', 'x', 26, 0.24);
+      this.easeBossPart('heldBarrel', 'y', 6, 0.24);
+      this.easeBossPart('head', 'y', -18, 0.2);
+      this.easeBossPart('torso', 'scaleY', 0.97, 0.18);
+      this.easeBossPart('shadow', 'scaleX', 0.95, 0.16);
+      return;
+    }
+
+    this.easeBossPart('armL', 'angle', -3 + idle * 3, 0.14);
+    this.easeBossPart('armR', 'angle', 4 - idle * 4, 0.14);
+    this.easeBossPart('fistR', 'x', 34 + idle * 0.8, 0.14);
+    this.easeBossPart('heldBarrel', 'x', 28 + idle * 0.8, 0.14);
+    this.easeBossPart('heldBarrel', 'y', 4 + Math.abs(idle) * 0.5, 0.14);
+    this.easeBossPart('head', 'y', -19 + idle * 0.6, 0.12);
+    this.easeBossPart('torso', 'scaleY', 1 + idle * 0.015, 0.12);
+    this.easeBossPart('shadow', 'scaleX', 1, 0.12);
   }
 
   private drawWorld(): void {
@@ -430,6 +486,7 @@ export class PlayScene extends Phaser.Scene {
       onComplete: () => {
         this.bossWarning.setVisible(false);
         if (!this.gameOver && this.started) {
+          this.bossThrowPulseUntil = this.time.now + 220;
           this.barrelSystem.spawnFromBoss(this.boss.x);
         }
       },
@@ -601,6 +658,7 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.updateHeroAnimation();
+    this.updateBossAnimation();
     this.barrelSystem.update(this.stage, this.scale.width);
     this.boss.y = PLATFORM_YS[PLATFORM_YS.length - 1] - 8 + Math.sin(this.time.now / 180) * 2;
   }
