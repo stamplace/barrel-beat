@@ -1,4 +1,5 @@
 import { MusicController } from '../../audio/music.js';
+import { SfxController } from '../../audio/sfx.js';
 import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
 import { PLATFORM_YS, applyStageLayout, getPlayerYForLevel, getStageLayoutName } from '../level/LevelModel.js';
 import {
@@ -80,6 +81,7 @@ export class PlayScene extends Phaser.Scene {
 
   private domCleanup: Array<() => void> = [];
   private music = new MusicController();
+  private sfx = new SfxController();
 
   constructor() {
     super('play');
@@ -449,16 +451,19 @@ export class PlayScene extends Phaser.Scene {
             url: window.location.href,
           });
           this.feedback.showBanner('CHALLENGE SENT', 'Now beat it again', 720);
+          this.sfx.share();
           return;
         }
 
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
           this.feedback.showBanner('LINK COPIED', 'Challenge ready to send', 720);
+          this.sfx.share();
           return;
         }
 
         this.feedback.showBanner('SHARE READY', shareText, 900);
+        this.sfx.share();
       } catch {
         this.feedback.showBanner('SHARE CANCELLED', '', 520);
       }
@@ -483,6 +488,7 @@ export class PlayScene extends Phaser.Scene {
     this.bossWarning.setVisible(false);
     document.getElementById('gameover-overlay')?.classList.add('hidden');
     document.getElementById('start-overlay')?.classList.add('hidden');
+    this.sfx.restart();
     this.scene.restart({
       stage: 1,
       score: 0,
@@ -507,6 +513,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.showTransition(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 700);
     this.cameras.main.flash(180, 255, 220, 160, true);
+    this.sfx.unlock();
+    this.sfx.start();
     this.music.start();
     this.feedback.showBanner(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 1200);
   }
@@ -541,12 +549,14 @@ export class PlayScene extends Phaser.Scene {
       };
 
       this.targetMoveX = null;
+      this.sfx.ladder();
       this.moveMarker.setPosition(chosen.x, getPlayerYForLevel(this.currentLevelIndex) + MOVE_MARKER_Y_OFFSET).setVisible(true);
       this.feedback.showBanner(direction === -1 ? 'LADDER UP' : 'LADDER DOWN', '', 260);
       return;
     }
 
     this.targetMoveX = Phaser.Math.Clamp(pointer.x, 18, this.scale.width - 18);
+    this.sfx.move();
     this.moveMarker
       .setPosition(this.targetMoveX, getPlayerYForLevel(this.currentLevelIndex) + MOVE_MARKER_Y_OFFSET)
       .setVisible(true);
@@ -559,6 +569,7 @@ export class PlayScene extends Phaser.Scene {
     const warnX = this.boss.x - 24;
     const warnY = PLATFORM_YS[PLATFORM_YS.length - 1] - 18;
 
+    this.sfx.warn();
     this.feedback.pulse(this.boss);
     this.bossWarning.setPosition(warnX, warnY).setVisible(true).setAlpha(1).setScale(0.8);
 
@@ -572,6 +583,7 @@ export class PlayScene extends Phaser.Scene {
         this.bossWarning.setVisible(false);
         if (!this.gameOver && this.started) {
           this.bossThrowPulseUntil = this.time.now + 220;
+          this.sfx.throw();
           this.barrelSystem.spawnFromBoss(this.boss.x);
         }
       },
@@ -650,6 +662,7 @@ export class PlayScene extends Phaser.Scene {
 
     this.lives -= 1;
     this.livesText.setText(`LIVES ${this.lives}`);
+    this.sfx.hit();
     this.feedback.flash(0xef4444, 0.22, 220);
     this.feedback.pulse(this.player);
     this.cameras.main.shake(150, 0.01);
@@ -673,6 +686,7 @@ export class PlayScene extends Phaser.Scene {
     this.stage += 1;
     this.score += 250;
     this.scoreText.setText(`SCORE ${this.score}`);
+    this.sfx.goal();
     this.levelText.setText(`LEVEL ${this.stage}`);
 
     this.started = false;
@@ -748,6 +762,7 @@ export class PlayScene extends Phaser.Scene {
     gameoverOverlay?.classList.remove('hidden');
     this.moveMarker.setVisible(false);
     this.bossWarning.setVisible(false);
+    this.sfx.gameOver();
     this.music.stop();
   }
 
