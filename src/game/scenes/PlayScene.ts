@@ -49,6 +49,7 @@ export class PlayScene extends Phaser.Scene {
   private ladderMarkers: Phaser.GameObjects.Text[] = [];
   private moveMarker!: Phaser.GameObjects.Container;
   private bossWarning!: Phaser.GameObjects.Container;
+  private heroParts: Record<string, Phaser.GameObjects.Shape> | null = null;
 
   private scoreText!: Phaser.GameObjects.Text;
   private bestText!: Phaser.GameObjects.Text;
@@ -108,6 +109,7 @@ export class PlayScene extends Phaser.Scene {
     this.playerBody.setCollideWorldBounds(true);
     this.playerBody.setSize(22, 34);
     this.playerBody.setOffset(-11, -17);
+    this.heroParts = this.player.getData('parts') as Record<string, Phaser.GameObjects.Shape> | null;
 
     this.goal = createGoal(this, width - 28, PLATFORM_YS[PLATFORM_YS.length - 1] - 26);
     this.physics.add.existing(this.goal, true);
@@ -195,6 +197,57 @@ export class PlayScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5);
     return this.add.container(0, 0, [ring, mark]).setVisible(false).setDepth(25);
+  }
+
+  private easeHeroPart(
+    key: string,
+    property: 'angle' | 'y' | 'scaleX' | 'alpha',
+    target: number,
+    factor = 0.18,
+  ): void {
+    const part = this.heroParts?.[key] as any;
+    if (!part) return;
+    part[property] += (target - part[property]) * factor;
+  }
+
+  private updateHeroAnimation(): void {
+    if (!this.heroParts) return;
+
+    const wave = Math.sin(this.time.now / 95);
+    const climbWave = Math.sin(this.time.now / 80);
+
+    if (this.activeClimb || this.snapToLadder) {
+      this.easeHeroPart('armL', 'angle', -55 + climbWave * 14, 0.22);
+      this.easeHeroPart('armR', 'angle', 55 - climbWave * 14, 0.22);
+      this.easeHeroPart('legL', 'angle', -12 - climbWave * 10, 0.22);
+      this.easeHeroPart('legR', 'angle', 12 + climbWave * 10, 0.22);
+      this.easeHeroPart('head', 'y', -10 + climbWave * 0.8, 0.2);
+      this.easeHeroPart('torso', 'angle', 0, 0.18);
+      this.easeHeroPart('shadow', 'scaleX', 0.86, 0.14);
+      this.easeHeroPart('shadow', 'alpha', 0.09, 0.14);
+      return;
+    }
+
+    if (this.targetMoveX !== null) {
+      this.easeHeroPart('armL', 'angle', -22 + wave * 28, 0.22);
+      this.easeHeroPart('armR', 'angle', 22 - wave * 28, 0.22);
+      this.easeHeroPart('legL', 'angle', 18 - wave * 26, 0.22);
+      this.easeHeroPart('legR', 'angle', -18 + wave * 26, 0.22);
+      this.easeHeroPart('head', 'y', -10 + Math.abs(wave) * 0.9, 0.2);
+      this.easeHeroPart('torso', 'angle', wave * 2.8, 0.18);
+      this.easeHeroPart('shadow', 'scaleX', 1.08, 0.14);
+      this.easeHeroPart('shadow', 'alpha', 0.18, 0.14);
+      return;
+    }
+
+    this.easeHeroPart('armL', 'angle', 0, 0.18);
+    this.easeHeroPart('armR', 'angle', 0, 0.18);
+    this.easeHeroPart('legL', 'angle', 0, 0.18);
+    this.easeHeroPart('legR', 'angle', 0, 0.18);
+    this.easeHeroPart('head', 'y', -10 + Math.sin(this.time.now / 220) * 0.4, 0.12);
+    this.easeHeroPart('torso', 'angle', 0, 0.14);
+    this.easeHeroPart('shadow', 'scaleX', 1, 0.12);
+    this.easeHeroPart('shadow', 'alpha', 0.14, 0.12);
   }
 
   private drawWorld(): void {
@@ -547,6 +600,7 @@ export class PlayScene extends Phaser.Scene {
       this.player.x = Phaser.Math.Clamp(this.player.x, 18, this.scale.width - 18);
     }
 
+    this.updateHeroAnimation();
     this.barrelSystem.update(this.stage, this.scale.width);
     this.boss.y = PLATFORM_YS[PLATFORM_YS.length - 1] - 8 + Math.sin(this.time.now / 180) * 2;
   }

@@ -61,7 +61,7 @@ export function createHero(
   const capTop = outlinedRect(scene, 0, -19, 18, 5, 0xd62828);
   const capBrim = outlinedRect(scene, 4, -16, 10, 2, 0x8f1616, 0x5b0d0d, 1);
 
-  return scene.add.container(x, y, [
+  const hero = scene.add.container(x, y, [
     shadow,
     bootL, bootR,
     legL, legR,
@@ -70,6 +70,18 @@ export function createHero(
     head, hair, nose, eyeL, eyeR, pupilL, pupilR,
     capTop, capBrim,
   ]);
+
+  hero.setDataEnabled();
+  hero.setData('parts', {
+    shadow,
+    bootL, bootR,
+    legL, legR,
+    torso,
+    armL, armR,
+    head,
+  });
+
+  return hero;
 }
 
 export function createBoss(
