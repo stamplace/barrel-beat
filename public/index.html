@@ -223,13 +223,18 @@
 
       <div id="gameover-overlay" class="overlay hidden">
         <div id="gameover-card" class="card">
-          <div class="eyebrow">Run complete</div>
+          <div id="result-eyebrow" class="eyebrow">Run complete</div>
           <h2 class="title" style="font-size: 34px;">GAME OVER</h2>
+          <p id="challenge-copy" class="subtitle">Beat my score and send yours back.</p>
 
           <div class="stats">
             <div class="stat">
               <div class="stat-label">Score</div>
               <div id="final-score" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Stage</div>
+              <div id="final-stage" class="stat-value">1</div>
             </div>
             <div class="stat">
               <div class="stat-label">Best</div>
@@ -239,10 +244,10 @@
 
           <div class="actions">
             <button id="restart-button" class="primary-btn">Play Again</button>
-            <button id="share-button" class="secondary-btn">Share Score</button>
+            <button id="share-button" class="secondary-btn">Challenge a Friend</button>
           </div>
 
-          <div class="tap-note">Tap this card to restart</div>
+          <div class="tap-note">Tap card to retry fast</div>
         </div>
       </div>
     </div>

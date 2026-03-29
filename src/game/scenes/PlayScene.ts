@@ -391,23 +391,32 @@ export class PlayScene extends Phaser.Scene {
       event.preventDefault();
       event.stopPropagation();
 
-      const text = `I reached score ${this.score} on Barrel Beat, level ${this.stage}.`;
+      const challengeScore = Math.max(this.best, this.score);
+      const shareText =
+        this.score >= challengeScore
+          ? `I just set a new Barrel Beat best: ${this.score}. Think you can beat it?`
+          : `I scored ${this.score} on Barrel Beat and reached stage ${this.stage}. Beat my best: ${challengeScore}.`;
 
       try {
         if (navigator.share) {
           await navigator.share({
             title: 'Barrel Beat',
-            text,
+            text: shareText,
             url: window.location.href,
           });
+          this.feedback.showBanner('CHALLENGE SENT', 'Now beat it again', 720);
           return;
         }
 
         if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(`${text} ${window.location.href}`);
+          await navigator.clipboard.writeText(`${shareText} ${window.location.href}`);
+          this.feedback.showBanner('LINK COPIED', 'Challenge ready to send', 720);
+          return;
         }
+
+        this.feedback.showBanner('SHARE READY', shareText, 900);
       } catch {
-        // no-op
+        this.feedback.showBanner('SHARE CANCELLED', '', 520);
       }
     };
 
@@ -652,18 +661,34 @@ export class PlayScene extends Phaser.Scene {
     if (this.gameOver) return;
     this.gameOver = true;
 
-    if (this.score > this.best) {
+    const isNewBest = this.score > this.best;
+
+    if (isNewBest) {
       this.best = this.score;
       window.localStorage.setItem(HIGH_SCORE_KEY, String(this.best));
       this.bestText.setText(`BEST ${this.best}`);
     }
 
     const finalScore = document.getElementById('final-score');
+    const finalStage = document.getElementById('final-stage');
     const bestScore = document.getElementById('best-score');
+    const challengeCopy = document.getElementById('challenge-copy');
+    const resultEyebrow = document.getElementById('result-eyebrow');
     const gameoverOverlay = document.getElementById('gameover-overlay');
 
     if (finalScore) finalScore.textContent = String(this.score);
+    if (finalStage) finalStage.textContent = String(this.stage);
     if (bestScore) bestScore.textContent = String(this.best);
+
+    if (resultEyebrow) {
+      resultEyebrow.textContent = isNewBest ? 'New best' : 'Run complete';
+    }
+
+    if (challengeCopy) {
+      challengeCopy.textContent = isNewBest
+        ? `New best: ${this.score}. Send the challenge and see who beats it first.`
+        : `You reached stage ${this.stage}. Challenge a friend to beat ${this.best}.`;
+    }
 
     this.feedback.flash(0xffffff, 0.14, 260);
     gameoverOverlay?.classList.remove('hidden');
