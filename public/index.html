@@ -46,24 +46,33 @@
       .hud {
         position: absolute;
         left: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom));
+        bottom: calc(8px + env(safe-area-inset-bottom));
         z-index: 10;
-        font-size: 12px;
+        font-size: 11px;
         color: #f3e9dc;
-        opacity: 0.68;
+        opacity: 0.55;
         pointer-events: none;
       }
 
-      .hint {
+      .top-hint {
         position: absolute;
         left: 50%;
-        bottom: calc(12px + env(safe-area-inset-bottom));
+        top: calc(78px + env(safe-area-inset-top));
         transform: translateX(-50%);
         z-index: 10;
-        font-size: 13px;
-        color: #d8c3aa;
-        opacity: 0.9;
+        max-width: 78%;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.25;
+        color: #e8d7bf;
+        opacity: 0.86;
         pointer-events: none;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.45);
+        transition: opacity 180ms ease;
+      }
+
+      .top-hint.hidden {
+        opacity: 0;
       }
 
       .overlay {
@@ -195,8 +204,8 @@
   <body>
     <div id="app-shell">
       <div id="game-root"></div>
-      <div class="hud">Barrel Beat • world tap</div>
-      <div class="hint">Tap platform to move • tap ladder to climb</div>
+      <div class="hud">Barrel Beat • ui cleanup</div>
+      <div id="top-hint" class="top-hint">Tap floor to move • tap ladder to climb</div>
 
       <div id="start-overlay" class="overlay">
         <div class="card">
@@ -205,7 +214,7 @@
           <p class="subtitle">
             Tap where you want to go. Tap ladders to climb. Reach the beacon.
           </p>
-          <div class="meta">No fixed controls • direct touch interaction</div>
+          <div class="meta">Cleaner screen • less overlap • clearer playfield</div>
           <div class="actions">
             <button id="start-button" class="primary-btn">Play</button>
           </div>

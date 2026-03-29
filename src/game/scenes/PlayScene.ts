@@ -109,10 +109,10 @@ export class PlayScene extends Phaser.Scene {
     this.playerBody.setSize(22, 34);
     this.playerBody.setOffset(-11, -17);
 
-    this.goal = createGoal(this, width - 42, PLATFORM_YS[PLATFORM_YS.length - 1] - 22);
+    this.goal = createGoal(this, width - 28, PLATFORM_YS[PLATFORM_YS.length - 1] - 26);
     this.physics.add.existing(this.goal, true);
 
-    this.boss = createBoss(this, width - 88, PLATFORM_YS[PLATFORM_YS.length - 1] - 8);
+    this.boss = createBoss(this, width - 118, PLATFORM_YS[PLATFORM_YS.length - 1] - 6);
 
     this.barrels = this.physics.add.group({
       allowGravity: false,
@@ -147,6 +147,7 @@ export class PlayScene extends Phaser.Scene {
     }).setOrigin(1, 0);
 
     this.moveMarker = this.createMoveMarker();
+    this.moveMarker.setScale(0.8);
     this.bossWarning = this.createBossWarning();
 
     this.physics.add.overlap(this.player, this.barrels, () => this.onBarrelHit(), undefined, this);
@@ -307,6 +308,11 @@ export class PlayScene extends Phaser.Scene {
 
     document.getElementById('start-overlay')?.classList.add('hidden');
     document.getElementById('gameover-overlay')?.classList.add('hidden');
+    document.getElementById('top-hint')?.classList.remove('hidden');
+    this.time.delayedCall(2400, () => {
+      document.getElementById('top-hint')?.classList.add('hidden');
+    });
+
     this.music.start();
     this.feedback.showBanner('STAGE 1', 'Watch the warning circle', 1200);
   }
@@ -488,6 +494,7 @@ export class PlayScene extends Phaser.Scene {
     this.playerBody.setVelocity(0);
     this.player.x = 42;
     this.player.y = getPlayerYForLevel(0);
+    this.moveMarker.setScale(0.8);
     this.moveMarker.setVisible(false);
   }
 
