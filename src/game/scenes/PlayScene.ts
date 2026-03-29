@@ -1,6 +1,17 @@
 import { MusicController } from '../../audio/music.js';
 import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
 import { PLATFORM_YS, getPlayerYForLevel } from '../level/LevelModel.js';
+import {
+  BARREL_OPENING_GRACE_MS,
+  BARREL_SPAWN_INTERVAL_MS,
+  BOSS_WARNING_DURATION_MS,
+  HERO_AUTO_MOVE_SPEED,
+  INITIAL_INVULNERABLE_MS,
+  LADDER_TAP_RADIUS,
+  LADDER_VISUAL_RADIUS,
+  MOVE_MARKER_Y_OFFSET,
+  RESPAWN_INVULNERABLE_MS,
+} from '../data/BalanceConfig.js';
 import { BarrelSystem } from '../systems/BarrelSystem.js';
 import { FeedbackSystem } from '../systems/FeedbackSystem.js';
 import {
@@ -142,7 +153,7 @@ export class PlayScene extends Phaser.Scene {
     this.physics.add.overlap(this.player, this.goal, () => this.onGoalReached(), undefined, this);
 
     this.time.addEvent({
-      delay: 1650,
+      delay: BARREL_SPAWN_INTERVAL_MS,
       loop: true,
       callback: this.spawnBarrelFromBoss,
       callbackScope: this,
@@ -292,7 +303,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.started) return;
     this.started = true;
     this.runStartedAt = this.time.now;
-    this.invulnerableUntil = this.time.now + 1800;
+    this.invulnerableUntil = this.time.now + INITIAL_INVULNERABLE_MS;
 
     document.getElementById('start-overlay')?.classList.add('hidden');
     document.getElementById('gameover-overlay')?.classList.add('hidden');
@@ -312,8 +323,8 @@ export class PlayScene extends Phaser.Scene {
 
     if (this.activeClimb || this.snapToLadder) return;
 
-    const upLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'up', 64);
-    const downLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'down', 64);
+    const upLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'up', LADDER_TAP_RADIUS);
+    const downLadder = findNearestLadder(pointer.x, this.currentLevelIndex, 'down', LADDER_TAP_RADIUS);
 
     if (upLadder || downLadder) {
       const chosen = upLadder ?? downLadder;
@@ -330,20 +341,20 @@ export class PlayScene extends Phaser.Scene {
       };
 
       this.targetMoveX = null;
-      this.moveMarker.setPosition(chosen.x, getPlayerYForLevel(this.currentLevelIndex) + 16).setVisible(true);
+      this.moveMarker.setPosition(chosen.x, getPlayerYForLevel(this.currentLevelIndex) + MOVE_MARKER_Y_OFFSET).setVisible(true);
       this.feedback.showBanner(direction === -1 ? 'LADDER UP' : 'LADDER DOWN', '', 260);
       return;
     }
 
     this.targetMoveX = Phaser.Math.Clamp(pointer.x, 18, this.scale.width - 18);
     this.moveMarker
-      .setPosition(this.targetMoveX, getPlayerYForLevel(this.currentLevelIndex) + 16)
+      .setPosition(this.targetMoveX, getPlayerYForLevel(this.currentLevelIndex) + MOVE_MARKER_Y_OFFSET)
       .setVisible(true);
   }
 
   private spawnBarrelFromBoss(): void {
     if (this.gameOver || !this.started) return;
-    if (this.time.now - this.runStartedAt < 2200) return;
+    if (this.time.now - this.runStartedAt < BARREL_OPENING_GRACE_MS) return;
 
     const warnX = this.boss.x - 24;
     const warnY = PLATFORM_YS[PLATFORM_YS.length - 1] - 18;
@@ -356,7 +367,7 @@ export class PlayScene extends Phaser.Scene {
       alpha: 0,
       scaleX: 1.2,
       scaleY: 1.2,
-      duration: 260,
+      duration: BOSS_WARNING_DURATION_MS,
       onComplete: () => {
         this.bossWarning.setVisible(false);
         if (!this.gameOver && this.started) {
@@ -378,7 +389,7 @@ export class PlayScene extends Phaser.Scene {
 
     this.player.x = Phaser.Math.Linear(this.player.x, this.snapToLadder.x, 0.48);
     this.moveMarker
-      .setPosition(this.snapToLadder.x, getPlayerYForLevel(this.currentLevelIndex) + 16)
+      .setPosition(this.snapToLadder.x, getPlayerYForLevel(this.currentLevelIndex) + MOVE_MARKER_Y_OFFSET)
       .setVisible(true);
 
     if (Math.abs(this.player.x - this.snapToLadder.x) < 4) {
@@ -429,7 +440,7 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    this.player.x += Math.sign(delta) * 4.4;
+    this.player.x += Math.sign(delta) * HERO_AUTO_MOVE_SPEED;
   }
 
   private onBarrelHit(): void {
@@ -443,7 +454,7 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.shake(150, 0.01);
     this.barrelSystem.clear();
     this.resetPlayerToBottom();
-    this.invulnerableUntil = this.time.now + 1200;
+    this.invulnerableUntil = this.time.now + RESPAWN_INVULNERABLE_MS;
 
     if (this.lives <= 0) {
       this.endGame();
@@ -464,7 +475,7 @@ export class PlayScene extends Phaser.Scene {
     this.levelText.setText(`LEVEL ${this.stage}`);
     this.barrelSystem.clear();
     this.resetPlayerToBottom();
-    this.invulnerableUntil = this.time.now + 1200;
+    this.invulnerableUntil = this.time.now + RESPAWN_INVULNERABLE_MS;
     this.feedback.flash(0x38bdf8, 0.18, 260);
     this.feedback.showBanner(`LEVEL ${this.stage}`, 'Barrels get meaner now', 900);
   }
@@ -511,7 +522,7 @@ export class PlayScene extends Phaser.Scene {
 
     if (this.gameOver || !this.started) return;
 
-    updateLadderVisuals(this.player.x, this.ladderHints, this.ladderMarkers, 170);
+    updateLadderVisuals(this.player.x, this.ladderHints, this.ladderMarkers, LADDER_VISUAL_RADIUS);
 
     if (this.time.now < this.invulnerableUntil) {
       this.player.alpha = Math.floor(this.time.now / 80) % 2 === 0 ? 0.55 : 1;

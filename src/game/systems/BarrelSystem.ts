@@ -1,5 +1,11 @@
 import { createBarrel, type BarrelState } from '../entities/BarrelFactory.js';
 import { LADDERS, PLATFORM_YS, directionForRow } from '../level/LevelModel.js';
+import {
+  BARREL_DESPAWN_MARGIN,
+  BARREL_DROP_SPEED,
+  getBarrelDropChance,
+  getBarrelHorizontalSpeed,
+} from '../data/BalanceConfig.js';
 
 type RuntimeBarrelState = BarrelState & {
   dropEvaluatedRow: number | null;
@@ -40,19 +46,6 @@ export class BarrelSystem {
     }
   }
 
-  private getHorizontalSpeed(stage: number): number {
-    if (stage <= 1) return 1.45;
-    if (stage === 2) return 1.8;
-    return 1.9 + stage * 0.16;
-  }
-
-  private getDropChance(stage: number): number {
-    if (stage <= 1) return 0.28;
-    if (stage === 2) return 0.42;
-    if (stage === 3) return 0.56;
-    return 0.68;
-  }
-
   update(stage: number, sceneWidth: number): void {
     const barrels = this.barrels.getChildren() as Phaser.GameObjects.Container[];
 
@@ -63,7 +56,7 @@ export class BarrelSystem {
       barrel.rotation += 0.06 * state.direction;
 
       if (state.dropping && state.targetRow !== null && state.targetY !== null) {
-        barrel.y += 4.4;
+        barrel.y += BARREL_DROP_SPEED;
 
         if (barrel.y >= state.targetY) {
           barrel.y = state.targetY;
@@ -79,7 +72,7 @@ export class BarrelSystem {
         continue;
       }
 
-      barrel.x += state.direction * this.getHorizontalSpeed(stage);
+      barrel.x += state.direction * getBarrelHorizontalSpeed(stage);
 
       const ladderBelow = LADDERS.find((ladder) => ladder.to === state.row);
       if (ladderBelow) {
@@ -90,7 +83,7 @@ export class BarrelSystem {
         if (crossed && state.dropEvaluatedRow !== state.row) {
           state.dropEvaluatedRow = state.row;
 
-          if (Math.random() < this.getDropChance(stage)) {
+          if (Math.random() < getBarrelDropChance(stage)) {
             state.dropping = true;
             state.targetRow = ladderBelow.from;
             state.targetY = PLATFORM_YS[ladderBelow.from] - 18;
@@ -102,7 +95,7 @@ export class BarrelSystem {
         }
       }
 
-      if (barrel.x < -50 || barrel.x > sceneWidth + 50) {
+      if (barrel.x < -BARREL_DESPAWN_MARGIN || barrel.x > sceneWidth + BARREL_DESPAWN_MARGIN) {
         barrel.destroy();
       }
     }
