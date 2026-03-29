@@ -1,6 +1,6 @@
 import { MusicController } from '../../audio/music.js';
 import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
-import { PLATFORM_YS, getPlayerYForLevel } from '../level/LevelModel.js';
+import { PLATFORM_YS, applyStageLayout, getPlayerYForLevel, getStageLayoutName } from '../level/LevelModel.js';
 import {
   BARREL_OPENING_GRACE_MS,
   BARREL_SPAWN_INTERVAL_MS,
@@ -72,6 +72,11 @@ export class PlayScene extends Phaser.Scene {
   private lastLadderHintAt = 0;
   private runStartedAt = 0;
   private invulnerableUntil = 0;
+  private carryScore = 0;
+  private carryLives = 3;
+  private carryStage = 1;
+  private carryBest = 0;
+  private autoStart = false;
 
   private domCleanup: Array<() => void> = [];
   private music = new MusicController();
@@ -80,10 +85,24 @@ export class PlayScene extends Phaser.Scene {
     super('play');
   }
 
+  init(data: {
+    score?: number;
+    lives?: number;
+    stage?: number;
+    best?: number;
+    autoStart?: boolean;
+  } = {}): void {
+    this.carryScore = data.score ?? 0;
+    this.carryLives = data.lives ?? 3;
+    this.carryStage = data.stage ?? 1;
+    this.carryBest = data.best ?? 0;
+    this.autoStart = data.autoStart ?? false;
+  }
+
   private resetSceneState(): void {
-    this.score = 0;
-    this.lives = 3;
-    this.stage = 1;
+    this.score = this.carryScore;
+    this.lives = this.carryLives;
+    this.stage = this.carryStage;
     this.gameOver = false;
     this.started = false;
     this.currentLevelIndex = 0;
@@ -98,9 +117,10 @@ export class PlayScene extends Phaser.Scene {
 
   create(): void {
     this.resetSceneState();
+    applyStageLayout(this.stage);
 
     const { width } = this.scale;
-    this.best = Number(window.localStorage.getItem(HIGH_SCORE_KEY) ?? '0');
+    this.best = Math.max(Number(window.localStorage.getItem(HIGH_SCORE_KEY) ?? '0'), this.carryBest);
 
     this.cameras.main.setBackgroundColor('#120d08');
     this.drawWorld();
@@ -146,7 +166,7 @@ export class PlayScene extends Phaser.Scene {
       color: '#ffd7a3',
     });
 
-    this.levelText = this.add.text(width - 16, 40, 'LEVEL 1', {
+    this.levelText = this.add.text(width - 16, 40, `LEVEL ${this.stage}`, {
       fontFamily: 'Arial, sans-serif',
       fontSize: '15px',
       color: '#ffd7a3',
@@ -178,6 +198,10 @@ export class PlayScene extends Phaser.Scene {
 
     this.input.on('pointerdown', this.handleWorldTap, this);
     this.setupOverlayControls();
+
+    if (this.autoStart) {
+      this.beginRun();
+    }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       for (const cleanup of this.domCleanup) cleanup();
@@ -423,7 +447,7 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.music.start();
-    this.feedback.showBanner('STAGE 1', 'Watch the warning circle', 1200);
+    this.feedback.showBanner(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 1200);
   }
 
   private handleWorldTap(pointer: Phaser.Input.Pointer): void {
@@ -589,11 +613,27 @@ export class PlayScene extends Phaser.Scene {
     this.score += 250;
     this.scoreText.setText(`SCORE ${this.score}`);
     this.levelText.setText(`LEVEL ${this.stage}`);
+
+    this.started = false;
+    this.targetMoveX = null;
+    this.activeClimb = null;
+    this.snapToLadder = null;
     this.barrelSystem.clear();
-    this.resetPlayerToBottom();
-    this.invulnerableUntil = this.time.now + RESPAWN_INVULNERABLE_MS;
+    this.moveMarker.setVisible(false);
+    this.bossWarning.setVisible(false);
+
     this.feedback.flash(0x38bdf8, 0.18, 260);
-    this.feedback.showBanner(`LEVEL ${this.stage}`, 'Barrels get meaner now', 900);
+    this.feedback.showBanner(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 900);
+
+    this.time.delayedCall(720, () => {
+      this.scene.restart({
+        stage: this.stage,
+        score: this.score,
+        lives: this.lives,
+        best: Math.max(this.best, this.score),
+        autoStart: true,
+      });
+    });
   }
 
   private resetPlayerToBottom(): void {
