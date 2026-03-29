@@ -1,3 +1,5 @@
+import { hasHeroTexture, hasBossTexture, hasGoalTexture } from './runtimeAssetHooks.js';
+
 function outlinedRect(
   scene: Phaser.Scene,
   x: number,
@@ -32,6 +34,15 @@ export function createHero(
   x: number,
   y: number,
 ): Phaser.GameObjects.Container {
+  if (hasHeroTexture(scene)) {
+    const sprite = scene.add.container(x, y, [
+      scene.add.sprite(0, 0, 'hero-sheet', 0),
+    ]);
+    sprite.setDataEnabled();
+    sprite.setData('parts', {});
+    sprite.setData('assetMode', 'sprite');
+    return sprite;
+  }
   const shadow = scene.add.ellipse(0, 24, 26, 8, 0x000000, 0.18);
 
   const bootL = outlinedRect(scene, -5, 23, 7, 5, 0x1e293b);
@@ -89,6 +100,15 @@ export function createBoss(
   x: number,
   y: number,
 ): Phaser.GameObjects.Container {
+  if (hasBossTexture(scene)) {
+    const boss = scene.add.container(x, y, [
+      scene.add.sprite(0, 0, 'boss-sheet', 0),
+    ]);
+    boss.setDataEnabled();
+    boss.setData('parts', {});
+    boss.setData('assetMode', 'sprite');
+    return boss;
+  }
   const shadow = scene.add.ellipse(0, 18, 54, 10, 0x000000, 0.2);
 
   const legL = outlinedRect(scene, -13, 12, 10, 10, 0x7a3b14);
@@ -119,7 +139,7 @@ export function createBoss(
   const heldRingL = outlinedRect(scene, 24, 4, 2, 12, 0x7a4a20, 0x7a4a20, 1);
   const heldRingR = outlinedRect(scene, 32, 4, 2, 12, 0x7a4a20, 0x7a4a20, 1);
 
-  return scene.add.container(x, y, [
+  const boss = scene.add.container(x, y, [
     shadow,
     legL, legR,
     torso, chest,
@@ -127,6 +147,21 @@ export function createBoss(
     head, brow, eyeL, eyeR, pupilL, pupilR, mouth,
     heldBarrel, heldRingL, heldRingR,
   ]);
+
+  boss.setDataEnabled();
+  boss.setData('parts', {
+    shadow,
+    torso,
+    chest,
+    armL, armR,
+    fistL, fistR,
+    head,
+    brow,
+    heldBarrel,
+    heldRingL, heldRingR,
+  });
+
+  return boss;
 }
 
 export function createGoal(
@@ -134,6 +169,14 @@ export function createGoal(
   x: number,
   y: number,
 ): Phaser.GameObjects.Container {
+  if (hasGoalTexture(scene)) {
+    const goal = scene.add.container(x, y, [
+      scene.add.sprite(0, 0, 'goal-sheet', 0),
+    ]);
+    goal.setDataEnabled();
+    goal.setData('assetMode', 'sprite');
+    return goal;
+  }
   const glow = scene.add.circle(0, -16, 20, 0x38bdf8, 0.18);
   const pole = outlinedRect(scene, 0, 0, 6, 34, 0xa5c7d8, 0x2b4a56, 1);
   const flag = outlinedRect(scene, 10, -12, 18, 10, 0x7dd3fc, 0x2b4a56, 1).setOrigin(0.5);

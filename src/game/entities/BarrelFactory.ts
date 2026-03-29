@@ -1,3 +1,5 @@
+import { hasBarrelTexture } from './runtimeAssetHooks.js';
+
 export type BarrelState = {
   row: number;
   direction: -1 | 1;
@@ -11,6 +13,14 @@ export function createBarrel(
   x: number,
   y: number,
 ): Phaser.GameObjects.Container {
+  if (hasBarrelTexture(scene)) {
+    const barrel = scene.add.container(x, y, [
+      scene.add.sprite(0, 0, 'barrel-sheet', 0),
+    ]);
+    barrel.setDataEnabled();
+    barrel.setData('assetMode', 'sprite');
+    return barrel;
+  }
   const shadow = scene.add.ellipse(0, 12, 20, 6, 0x000000, 0.16);
 
   const outer = scene.add

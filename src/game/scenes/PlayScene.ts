@@ -135,6 +135,7 @@ export class PlayScene extends Phaser.Scene {
     this.playerBody.setSize(22, 34);
     this.playerBody.setOffset(-11, -17);
     this.heroParts = this.player.getData('parts') as Record<string, Phaser.GameObjects.Shape> | null;
+    const heroAssetMode = this.player.getData('assetMode');
 
     this.goal = createGoal(this, width - 28, PLATFORM_YS[PLATFORM_YS.length - 1] - 26);
     this.physics.add.existing(this.goal, true);
@@ -242,7 +243,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private updateHeroAnimation(): void {
-    if (!this.heroParts) return;
+    if (!this.heroParts || Object.keys(this.heroParts).length === 0) return;
 
     const wave = Math.sin(this.time.now / 95);
     const climbWave = Math.sin(this.time.now / 80);
@@ -293,7 +294,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private updateBossAnimation(): void {
-    if (!this.bossParts) return;
+    if (!this.bossParts || Object.keys(this.bossParts).length === 0) return;
 
     const idle = Math.sin(this.time.now / 210);
     const warningPose = this.bossWarning.visible;
