@@ -198,6 +198,7 @@ export class PlayScene extends Phaser.Scene {
 
     this.input.on('pointerdown', this.handleWorldTap, this);
     this.setupOverlayControls();
+    this.updateStartOverlay();
 
     if (this.autoStart) {
       this.beginRun();
@@ -366,6 +367,49 @@ export class PlayScene extends Phaser.Scene {
     this.ladderMarkers = ladderLayer.markers;
   }
 
+  private updateStartOverlay(): void {
+    const startBest = document.getElementById('start-best');
+    const startTarget = document.getElementById('start-target');
+    const startHook = document.getElementById('start-hook');
+    const startMeta = document.getElementById('start-meta');
+
+    const bestValue = Math.max(this.best, this.score);
+    const targetValue = Math.max(300, bestValue + 120);
+
+    if (startBest) startBest.textContent = String(bestValue);
+    if (startTarget) startTarget.textContent = String(targetValue);
+
+    if (startHook) {
+      startHook.textContent =
+        bestValue < 300
+          ? 'Reach 300. Unlock the chase.'
+          : bestValue < 900
+            ? 'Beat your best. Push into the next stage.'
+            : 'This run matters. Hold the lead and send the challenge.';
+    }
+
+    if (startMeta) {
+      startMeta.textContent =
+        bestValue < 300
+          ? 'Clear stage one. Learn the route. Build momentum.'
+          : `Best ${bestValue}. Next target ${targetValue}.`;
+    }
+  }
+
+  private showTransition(title: string, subtitle: string, duration = 620): void {
+    const overlay = document.getElementById('transition-overlay');
+    const titleNode = document.getElementById('transition-title');
+    const subtitleNode = document.getElementById('transition-subtitle');
+
+    if (titleNode) titleNode.textContent = title;
+    if (subtitleNode) subtitleNode.textContent = subtitle;
+    overlay?.classList.add('visible');
+
+    this.time.delayedCall(duration, () => {
+      overlay?.classList.remove('visible');
+    });
+  }
+
   private setupOverlayControls(): void {
     const startOverlay = document.getElementById('start-overlay');
     const gameoverOverlay = document.getElementById('gameover-overlay');
@@ -439,7 +483,13 @@ export class PlayScene extends Phaser.Scene {
     this.bossWarning.setVisible(false);
     document.getElementById('gameover-overlay')?.classList.add('hidden');
     document.getElementById('start-overlay')?.classList.add('hidden');
-    this.scene.restart();
+    this.scene.restart({
+      stage: 1,
+      score: 0,
+      lives: 3,
+      best: this.best,
+      autoStart: false,
+    });
   }
 
   private beginRun(): void {
@@ -455,6 +505,8 @@ export class PlayScene extends Phaser.Scene {
       document.getElementById('top-hint')?.classList.add('hidden');
     });
 
+    this.showTransition(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 700);
+    this.cameras.main.flash(180, 255, 220, 160, true);
     this.music.start();
     this.feedback.showBanner(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 1200);
   }
@@ -633,8 +685,9 @@ export class PlayScene extends Phaser.Scene {
 
     this.feedback.flash(0x38bdf8, 0.18, 260);
     this.feedback.showBanner(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 900);
+    this.showTransition(`STAGE ${this.stage}`, getStageLayoutName(this.stage), 760);
 
-    this.time.delayedCall(720, () => {
+    this.time.delayedCall(760, () => {
       this.scene.restart({
         stage: this.stage,
         score: this.score,
@@ -690,6 +743,7 @@ export class PlayScene extends Phaser.Scene {
         : `You reached stage ${this.stage}. Challenge a friend to beat ${this.best}.`;
     }
 
+    this.updateStartOverlay();
     this.feedback.flash(0xffffff, 0.14, 260);
     gameoverOverlay?.classList.remove('hidden');
     this.moveMarker.setVisible(false);

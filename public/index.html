@@ -89,6 +89,49 @@
 
       .overlay.hidden { display: none; }
 
+      .transition-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 24;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 180ms ease;
+      }
+
+      .transition-overlay.visible {
+        opacity: 1;
+      }
+
+      .transition-card {
+        min-width: 220px;
+        max-width: 82%;
+        padding: 18px 20px;
+        border-radius: 20px;
+        text-align: center;
+        background: rgba(12, 8, 5, 0.78);
+        border: 1px solid rgba(255, 179, 71, 0.22);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+        backdrop-filter: blur(6px);
+      }
+
+      .transition-title {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: #ffcf7d;
+      }
+
+      .transition-subtitle {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #f3e9dc;
+        opacity: 0.9;
+      }
+
       .card {
         width: min(100%, 360px);
         border: 1px solid rgba(255, 179, 71, 0.22);
@@ -207,16 +250,35 @@
       <div class="hud">Barrel Beat • ui cleanup</div>
       <div id="top-hint" class="top-hint">Tap floor to move • tap ladder to climb</div>
 
+      <div id="transition-overlay" class="transition-overlay">
+        <div class="transition-card">
+          <div id="transition-title" class="transition-title">STAGE 1</div>
+          <div id="transition-subtitle" class="transition-subtitle">Classic Lift</div>
+        </div>
+      </div>
+
       <div id="start-overlay" class="overlay">
         <div class="card">
           <div class="eyebrow">Arcade climb</div>
           <h1 class="title">BARREL<br />BEAT</h1>
-          <p class="subtitle">
-            Tap where you want to go. Tap ladders to climb. Reach the beacon.
+          <p id="start-hook" class="subtitle">
+            Climb fast. Survive longer. Beat your best.
           </p>
-          <div class="meta">Cleaner screen • less overlap • clearer playfield</div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">Best</div>
+              <div id="start-best" class="stat-value">0</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Target</div>
+              <div id="start-target" class="stat-value">300</div>
+            </div>
+          </div>
+
+          <div id="start-meta" class="meta">Clear stage one. Push into stage two. Send the challenge.</div>
           <div class="actions">
-            <button id="start-button" class="primary-btn">Play</button>
+            <button id="start-button" class="primary-btn">Start Run</button>
           </div>
         </div>
       </div>
@@ -243,7 +305,7 @@
           </div>
 
           <div class="actions">
-            <button id="restart-button" class="primary-btn">Play Again</button>
+            <button id="restart-button" class="primary-btn">One More Try</button>
             <button id="share-button" class="secondary-btn">Challenge a Friend</button>
           </div>
 
