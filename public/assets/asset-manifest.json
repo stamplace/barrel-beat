@@ -1,7 +1,62 @@
 {
-  "images": [],
-  "spritesheets": [],
+  "images": [
+    { "key": "platform-tile", "url": "./environment/platform-tile.png" },
+    { "key": "ladder-tile", "url": "./environment/ladder-tile.png" },
+    { "key": "bg-layer-back", "url": "./environment/bg-layer-back.png" },
+    { "key": "bg-layer-front", "url": "./environment/bg-layer-front.png" },
+    { "key": "logo", "url": "./ui/logo.png" }
+  ],
+  "spritesheets": [
+    {
+      "key": "hero-sheet",
+      "url": "./sprites/hero-sheet.png",
+      "frameWidth": 64,
+      "frameHeight": 64
+    },
+    {
+      "key": "boss-sheet",
+      "url": "./sprites/boss-sheet.png",
+      "frameWidth": 96,
+      "frameHeight": 96
+    },
+    {
+      "key": "barrel-sheet",
+      "url": "./sprites/barrel-sheet.png",
+      "frameWidth": 32,
+      "frameHeight": 32
+    },
+    {
+      "key": "goal-sheet",
+      "url": "./sprites/goal-sheet.png",
+      "frameWidth": 48,
+      "frameHeight": 48
+    }
+  ],
   "atlases": [],
-  "audio": [],
-  "animations": []
+  "audio": [
+    { "key": "theme-main", "urls": ["./audio/theme-main.mp3"] },
+    { "key": "sfx-throw", "urls": ["./audio/sfx-throw.mp3"] },
+    { "key": "sfx-hit", "urls": ["./audio/sfx-hit.mp3"] },
+    { "key": "sfx-goal", "urls": ["./audio/sfx-goal.mp3"] },
+    { "key": "sfx-climb", "urls": ["./audio/sfx-climb.mp3"] },
+    { "key": "sfx-restart", "urls": ["./audio/sfx-restart.mp3"] },
+    { "key": "sfx-gameover", "urls": ["./audio/sfx-gameover.mp3"] }
+  ],
+  "animations": [
+    { "key": "hero-idle", "texture": "hero-sheet", "start": 0, "end": 3, "frameRate": 6, "repeat": -1 },
+    { "key": "hero-run", "texture": "hero-sheet", "start": 4, "end": 9, "frameRate": 10, "repeat": -1 },
+    { "key": "hero-climb", "texture": "hero-sheet", "start": 10, "end": 15, "frameRate": 10, "repeat": -1 },
+    { "key": "hero-hit", "texture": "hero-sheet", "start": 16, "end": 19, "frameRate": 10, "repeat": 0 },
+
+    { "key": "boss-idle", "texture": "boss-sheet", "start": 0, "end": 3, "frameRate": 5, "repeat": -1 },
+    { "key": "boss-windup", "texture": "boss-sheet", "start": 4, "end": 7, "frameRate": 8, "repeat": 0 },
+    { "key": "boss-throw", "texture": "boss-sheet", "start": 8, "end": 11, "frameRate": 10, "repeat": 0 },
+    { "key": "boss-recoil", "texture": "boss-sheet", "start": 12, "end": 15, "frameRate": 8, "repeat": 0 },
+
+    { "key": "barrel-roll", "texture": "barrel-sheet", "start": 0, "end": 7, "frameRate": 14, "repeat": -1 },
+    { "key": "barrel-danger", "texture": "barrel-sheet", "start": 8, "end": 11, "frameRate": 8, "repeat": -1 },
+
+    { "key": "goal-idle", "texture": "goal-sheet", "start": 0, "end": 3, "frameRate": 5, "repeat": -1 },
+    { "key": "goal-pulse", "texture": "goal-sheet", "start": 4, "end": 7, "frameRate": 8, "repeat": -1 }
+  ]
 }
