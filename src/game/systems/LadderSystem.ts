@@ -8,6 +8,8 @@ export type LadderLayer = {
 export function drawLadderLayer(scene: Phaser.Scene): LadderLayer {
   const hints: Phaser.GameObjects.Rectangle[] = [];
   const markers: Phaser.GameObjects.Text[] = [];
+  const hasShort = scene.textures.exists('temple-ladder-short');
+  const hasTall = scene.textures.exists('temple-ladder-tall');
 
   for (const ladder of LADDERS) {
     const yTop = PLATFORM_YS[ladder.to];
@@ -16,24 +18,40 @@ export function drawLadderLayer(scene: Phaser.Scene): LadderLayer {
     const ladderHeight = yBottom - yTop - 18;
 
     const hint = scene.add
-      .rectangle(ladder.x, centerY, 74, ladderHeight + 42, 0xfbbf24, 0.04)
-      .setOrigin(0.5);
+      .rectangle(ladder.x, centerY, 68, ladderHeight + 28, 0xfbbf24, 0.03)
+      .setOrigin(0.5)
+      .setDepth(6);
+
     hints.push(hint);
 
-    scene.add.rectangle(ladder.x, centerY, 10, ladderHeight, 0x94a3b8).setOrigin(0.5);
+    if (hasShort || hasTall) {
+      const ladderKey = ladderHeight >= 150 && hasTall ? 'temple-ladder-tall' : (hasShort ? 'temple-ladder-short' : 'temple-ladder-tall');
 
-    for (let y = yTop + 16; y < yBottom - 12; y += 18) {
-      scene.add.rectangle(ladder.x, y, 26, 4, 0xcbd5e1).setOrigin(0.5);
+      scene.add.image(ladder.x, centerY, ladderKey)
+        .setOrigin(0.5)
+        .setDisplaySize(42, ladderHeight)
+        .setDepth(7);
+    } else {
+      scene.add.rectangle(ladder.x, centerY, 10, ladderHeight, 0x94a3b8)
+        .setOrigin(0.5)
+        .setDepth(7);
+
+      for (let y = yTop + 16; y < yBottom - 12; y += 18) {
+        scene.add.rectangle(ladder.x, y, 26, 4, 0xcbd5e1)
+          .setOrigin(0.5)
+          .setDepth(8);
+      }
     }
 
     const marker = scene.add
-      .text(ladder.x, yBottom - 28, '⇅', {
+      .text(ladder.x, yBottom - 24, '⇅', {
         fontFamily: 'Arial Black, Arial, sans-serif',
         fontSize: '16px',
         color: '#fde68a',
       })
       .setOrigin(0.5)
-      .setAlpha(0.24);
+      .setAlpha(0.12)
+      .setDepth(9);
 
     markers.push(marker);
   }
@@ -48,11 +66,11 @@ export function updateLadderVisuals(
   activeDistance = 170,
 ): void {
   for (const hint of hints) {
-    hint.setAlpha(Math.abs(playerX - hint.x) < activeDistance ? 0.18 : 0.04);
+    hint.setAlpha(Math.abs(playerX - hint.x) < activeDistance ? 0.08 : 0.03);
   }
 
   for (const marker of markers) {
-    marker.setAlpha(Math.abs(playerX - marker.x) < activeDistance ? 1 : 0.24);
+    marker.setAlpha(Math.abs(playerX - marker.x) < activeDistance ? 0.42 : 0.12);
   }
 }
 

@@ -4,6 +4,20 @@ export type LadderLink = {
   to: number;
 };
 
+
+export type FloorSpec = {
+  floorIndex: number;
+  role?: string;
+  widthClass?: 'wide' | 'medium' | 'narrow';
+  xAlign?: 'left' | 'center' | 'right';
+  ladderEntrySide?: 'left' | 'right' | 'center';
+  ladderExitSide?: 'left' | 'right' | 'center' | 'center-short';
+  frontness?: 'front' | 'mid' | 'rear';
+  hazardProfile?: string;
+  eventHook?: string;
+  visualVariant?: string;
+};
+
 export type LevelLayout = {
   name: string;
   platformYs: number[];
@@ -12,27 +26,21 @@ export type LevelLayout = {
 
 const LEVEL_LAYOUTS: LevelLayout[] = [
   {
-    name: 'Classic Lift',
-    platformYs: [760, 650, 540, 430, 320, 210, 100],
+    name: 'Temple Tower V1',
+    platformYs: [742, 605, 468, 320],
     ladders: [
-      { x: 90, from: 0, to: 1 },
-      { x: 300, from: 1, to: 2 },
-      { x: 130, from: 2, to: 3 },
-      { x: 285, from: 3, to: 4 },
-      { x: 165, from: 4, to: 5 },
-      { x: 305, from: 5, to: 6 },
+      { x: 188, from: 0, to: 1 },
+      { x: 214, from: 1, to: 2 },
+      { x: 196, from: 2, to: 3 },
     ],
   },
   {
-    name: 'Zigzag Shift',
-    platformYs: [760, 650, 540, 430, 320, 210, 100],
+    name: 'Temple Tower V1 Shift',
+    platformYs: [742, 605, 468, 320],
     ladders: [
-      { x: 300, from: 0, to: 1 },
-      { x: 120, from: 1, to: 2 },
-      { x: 285, from: 2, to: 3 },
-      { x: 110, from: 3, to: 4 },
-      { x: 300, from: 4, to: 5 },
-      { x: 150, from: 5, to: 6 },
+      { x: 202, from: 0, to: 1 },
+      { x: 184, from: 1, to: 2 },
+      { x: 208, from: 2, to: 3 },
     ],
   },
 ];
@@ -52,9 +60,14 @@ export function getStageLayoutName(stage: number): string {
 
 export function applyStageLayout(stage: number): void {
   const layout = getStageLayout(stage);
-
   PLATFORM_YS.splice(0, PLATFORM_YS.length, ...layout.platformYs);
   LADDERS.splice(0, LADDERS.length, ...layout.ladders.map((ladder) => ({ ...ladder })));
+}
+
+
+
+export function getFloorSpec(stage: number, levelIndex: number): FloorSpec | null {
+  return null;
 }
 
 export function getPlayerYForLevel(levelIndex: number): number {
@@ -62,5 +75,24 @@ export function getPlayerYForLevel(levelIndex: number): number {
 }
 
 export function directionForRow(row: number): -1 | 1 {
-  return row % 2 === 0 ? -1 : 1;
+  return row % 2 === 0 ? 1 : -1;
+}
+
+export function getFloorBounds(
+  stage: number,
+  levelIndex: number,
+  sceneWidth: number,
+): { minX: number; maxX: number; centerX: number; width: number } {
+  const widths = [274, 248, 228, 282];
+  const centers = [195, 196, 196, 195];
+
+  const width = widths[Math.max(0, Math.min(levelIndex, widths.length - 1))];
+  const centerX = centers[Math.max(0, Math.min(levelIndex, centers.length - 1))];
+
+  return {
+    minX: Math.max(22, centerX - width / 2),
+    maxX: Math.min(sceneWidth - 22, centerX + width / 2),
+    centerX,
+    width,
+  };
 }

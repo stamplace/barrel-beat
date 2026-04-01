@@ -1,62 +1,405 @@
 {
   "images": [
-    { "key": "platform-tile", "url": "./environment/platform-tile.png" },
-    { "key": "ladder-tile", "url": "./environment/ladder-tile.png" },
-    { "key": "bg-layer-back", "url": "./environment/bg-layer-back.png" },
-    { "key": "bg-layer-front", "url": "./environment/bg-layer-front.png" },
-    { "key": "logo", "url": "./ui/logo.png" }
+    {
+      "key": "platform-tile",
+      "url": "./assets/environment/platform-tile.png"
+    },
+    {
+      "key": "ladder-tile",
+      "url": "./assets/environment/ladder-tile.png"
+    },
+    {
+      "key": "bg-layer-back",
+      "url": "./assets/environment/bg-layer-back.png"
+    },
+    {
+      "key": "bg-layer-front",
+      "url": "./assets/environment/bg-layer-front.png"
+    },
+    {
+      "key": "logo",
+      "url": "./assets/ui/logo.png"
+    },
+    {
+      "key": "platform-edge-left",
+      "url": "./assets/environment/platform-edge-left.png"
+    },
+    {
+      "key": "platform-edge-right",
+      "url": "./assets/environment/platform-edge-right.png"
+    },
+    {
+      "key": "platform-middle",
+      "url": "./assets/environment/platform-middle.png"
+    },
+    {
+      "key": "facade-platform-clean",
+      "url": "./assets/environment/facade-platform-clean.png"
+    },
+    {
+      "key": "facade-platform-cracked",
+      "url": "./assets/environment/facade-platform-cracked.png"
+    },
+    {
+      "key": "facade-platform-moss-left",
+      "url": "./assets/environment/facade-platform-moss-left.png"
+    },
+    {
+      "key": "facade-platform-moss-right",
+      "url": "./assets/environment/facade-platform-moss-right.png"
+    },
+    {
+      "key": "ladder-short",
+      "url": "./assets/environment/ladder-short.png"
+    },
+    {
+      "key": "ladder-wide",
+      "url": "./assets/environment/ladder-wide.png"
+    },
+    {
+      "key": "ladder-broken",
+      "url": "./assets/environment/ladder-broken.png"
+    },
+    {
+      "key": "barrel-pose",
+      "url": "./assets/props/barrel-pose.png"
+    },
+    {
+      "key": "barrel-broken",
+      "url": "./assets/props/barrel-broken.png"
+    },
+    {
+      "key": "boss-silhouette",
+      "url": "./assets/characters/boss-silhouette.png"
+    },
+    {
+      "key": "boss-portrait",
+      "url": "./assets/characters/boss-portrait.png"
+    },
+    {
+      "key": "boss-throw-pose",
+      "url": "./assets/characters/boss-throw-pose.png"
+    },
+    {
+      "key": "boss-icon",
+      "url": "./assets/characters/boss-icon.png"
+    },
+    {
+      "key": "player-idle",
+      "url": "./assets/player/player-idle.png"
+    },
+    {
+      "key": "player-walk-01",
+      "url": "./assets/player/player-walk-01.png"
+    },
+    {
+      "key": "player-walk-02",
+      "url": "./assets/player/player-walk-02.png"
+    },
+    {
+      "key": "player-walk-03",
+      "url": "./assets/player/player-walk-03.png"
+    },
+    {
+      "key": "heart-01",
+      "url": "./assets/ui/heart-01.png"
+    },
+    {
+      "key": "heart-02",
+      "url": "./assets/ui/heart-02.png"
+    },
+    {
+      "key": "heart-03",
+      "url": "./assets/ui/heart-03.png"
+    },
+    {
+      "key": "boss-bar",
+      "url": "./assets/ui/boss-bar.png"
+    },
+    {
+      "key": "barrel-ui-icon",
+      "url": "./assets/ui/barrel-ui-icon.png"
+    },
+    {
+      "key": "play-button",
+      "url": "./assets/ui/play-button.png"
+    },
+    {
+      "key": "player-ui",
+      "url": "./assets/ui/player-ui.png"
+    },
+    {
+      "key": "hit-fx-yellow-01",
+      "url": "./assets/effects/hit-fx-yellow-01.png"
+    },
+    {
+      "key": "hit-fx-yellow-02",
+      "url": "./assets/effects/hit-fx-yellow-02.png"
+    },
+    {
+      "key": "hit-fx-ground-01",
+      "url": "./assets/effects/hit-fx-ground-01.png"
+    },
+    {
+      "key": "dust-fx",
+      "url": "./assets/effects/dust-fx.png"
+    },
+    {
+      "key": "speed-lines",
+      "url": "./assets/effects/speed-lines.png"
+    },
+    {
+      "key": "pit-glow-crop",
+      "url": "./assets/effects/pit-glow-crop.png"
+    },
+    {
+      "key": "collectible-banana",
+      "url": "./assets/collectibles/collectible-banana.png"
+    },
+    {
+      "key": "collectible-coin",
+      "url": "./assets/collectibles/collectible-coin.png"
+    },
+    {
+      "key": "collectible-sparkle",
+      "url": "./assets/collectibles/collectible-sparkle.png"
+    },
+    {
+      "key": "barrel-roll-01",
+      "url": "./assets/props/barrel-roll-01.png"
+    },
+    {
+      "key": "barrel-roll-02",
+      "url": "./assets/props/barrel-roll-02.png"
+    },
+    {
+      "key": "barrel-roll-03",
+      "url": "./assets/props/barrel-roll-03.png"
+    },
+    {
+      "key": "barrel-roll-04",
+      "url": "./assets/props/barrel-roll-04.png"
+    },
+    {
+      "key": "barrel-roll-05",
+      "url": "./assets/props/barrel-roll-05.png"
+    },
+    {
+      "key": "barrel-roll-06",
+      "url": "./assets/props/barrel-roll-06.png"
+    },
+    {
+      "key": "barrel-roll-07",
+      "url": "./assets/props/barrel-roll-07.png"
+    },
+    {
+      "key": "boss-ui-scene-bg",
+      "url": "./assets/backgrounds/boss-ui-scene-bg.png"
+    },
+    {
+      "key": "deck-left",
+      "url": "./assets/environment/deck-left.png"
+    },
+    {
+      "key": "deck-middle",
+      "url": "./assets/environment/deck-middle.png"
+    },
+    {
+      "key": "deck-cracked",
+      "url": "./assets/environment/deck-cracked.png"
+    },
+    {
+      "key": "deck-right",
+      "url": "./assets/environment/deck-right.png"
+    },
+    {
+      "key": "tower-wall-mid",
+      "url": "./assets/environment/tower-wall-mid.png"
+    },
+    {
+      "key": "ladder-tall",
+      "url": "./assets/environment/ladder-tall.png"
+    },
+    {
+      "key": "temple-ladder-short",
+      "url": "./assets/environment/temple-ladder-short.png"
+    },
+    {
+      "key": "temple-ladder-tall",
+      "url": "./assets/environment/temple-ladder-tall.png"
+    },
+    {
+      "key": "boss-topdeck-king-idle",
+      "url": "./assets/characters/boss-topdeck-king-idle.png"
+    }
   ],
   "spritesheets": [
     {
       "key": "hero-sheet",
-      "url": "./sprites/hero-sheet.png",
+      "url": "./assets/sprites/hero-sheet.png",
       "frameWidth": 64,
       "frameHeight": 64
     },
     {
       "key": "boss-sheet",
-      "url": "./sprites/boss-sheet.png",
+      "url": "./assets/sprites/boss-sheet.png",
       "frameWidth": 96,
       "frameHeight": 96
     },
     {
       "key": "barrel-sheet",
-      "url": "./sprites/barrel-sheet.png",
+      "url": "./assets/sprites/barrel-sheet.png",
       "frameWidth": 32,
       "frameHeight": 32
     },
     {
       "key": "goal-sheet",
-      "url": "./sprites/goal-sheet.png",
+      "url": "./assets/sprites/goal-sheet.png",
       "frameWidth": 48,
       "frameHeight": 48
     }
   ],
   "atlases": [],
   "audio": [
-    { "key": "theme-main", "urls": ["./audio/theme-main.mp3"] },
-    { "key": "sfx-throw", "urls": ["./audio/sfx-throw.mp3"] },
-    { "key": "sfx-hit", "urls": ["./audio/sfx-hit.mp3"] },
-    { "key": "sfx-goal", "urls": ["./audio/sfx-goal.mp3"] },
-    { "key": "sfx-climb", "urls": ["./audio/sfx-climb.mp3"] },
-    { "key": "sfx-restart", "urls": ["./audio/sfx-restart.mp3"] },
-    { "key": "sfx-gameover", "urls": ["./audio/sfx-gameover.mp3"] }
+    {
+      "key": "theme-main",
+      "urls": [
+        "./assets/audio/theme-main.mp3"
+      ]
+    },
+    {
+      "key": "sfx-throw",
+      "urls": [
+        "./assets/audio/sfx-throw.mp3"
+      ]
+    },
+    {
+      "key": "sfx-hit",
+      "urls": [
+        "./assets/audio/sfx-hit.mp3"
+      ]
+    },
+    {
+      "key": "sfx-goal",
+      "urls": [
+        "./assets/audio/sfx-goal.mp3"
+      ]
+    },
+    {
+      "key": "sfx-climb",
+      "urls": [
+        "./assets/audio/sfx-climb.mp3"
+      ]
+    },
+    {
+      "key": "sfx-restart",
+      "urls": [
+        "./assets/audio/sfx-restart.mp3"
+      ]
+    },
+    {
+      "key": "sfx-gameover",
+      "urls": [
+        "./assets/audio/sfx-gameover.mp3"
+      ]
+    }
   ],
   "animations": [
-    { "key": "hero-idle", "texture": "hero-sheet", "start": 0, "end": 3, "frameRate": 6, "repeat": -1 },
-    { "key": "hero-run", "texture": "hero-sheet", "start": 4, "end": 9, "frameRate": 10, "repeat": -1 },
-    { "key": "hero-climb", "texture": "hero-sheet", "start": 10, "end": 15, "frameRate": 10, "repeat": -1 },
-    { "key": "hero-hit", "texture": "hero-sheet", "start": 16, "end": 19, "frameRate": 10, "repeat": 0 },
-
-    { "key": "boss-idle", "texture": "boss-sheet", "start": 0, "end": 3, "frameRate": 5, "repeat": -1 },
-    { "key": "boss-windup", "texture": "boss-sheet", "start": 4, "end": 7, "frameRate": 8, "repeat": 0 },
-    { "key": "boss-throw", "texture": "boss-sheet", "start": 8, "end": 11, "frameRate": 10, "repeat": 0 },
-    { "key": "boss-recoil", "texture": "boss-sheet", "start": 12, "end": 15, "frameRate": 8, "repeat": 0 },
-
-    { "key": "barrel-roll", "texture": "barrel-sheet", "start": 0, "end": 7, "frameRate": 14, "repeat": -1 },
-    { "key": "barrel-danger", "texture": "barrel-sheet", "start": 8, "end": 11, "frameRate": 8, "repeat": -1 },
-
-    { "key": "goal-idle", "texture": "goal-sheet", "start": 0, "end": 3, "frameRate": 5, "repeat": -1 },
-    { "key": "goal-pulse", "texture": "goal-sheet", "start": 4, "end": 7, "frameRate": 8, "repeat": -1 }
+    {
+      "key": "hero-idle",
+      "texture": "hero-sheet",
+      "start": 0,
+      "end": 3,
+      "frameRate": 6,
+      "repeat": -1
+    },
+    {
+      "key": "hero-run",
+      "texture": "hero-sheet",
+      "start": 4,
+      "end": 9,
+      "frameRate": 10,
+      "repeat": -1
+    },
+    {
+      "key": "hero-climb",
+      "texture": "hero-sheet",
+      "start": 10,
+      "end": 15,
+      "frameRate": 10,
+      "repeat": -1
+    },
+    {
+      "key": "hero-hit",
+      "texture": "hero-sheet",
+      "start": 16,
+      "end": 19,
+      "frameRate": 10,
+      "repeat": 0
+    },
+    {
+      "key": "boss-idle",
+      "texture": "boss-sheet",
+      "start": 0,
+      "end": 3,
+      "frameRate": 5,
+      "repeat": -1
+    },
+    {
+      "key": "boss-windup",
+      "texture": "boss-sheet",
+      "start": 4,
+      "end": 7,
+      "frameRate": 8,
+      "repeat": 0
+    },
+    {
+      "key": "boss-throw",
+      "texture": "boss-sheet",
+      "start": 8,
+      "end": 11,
+      "frameRate": 10,
+      "repeat": 0
+    },
+    {
+      "key": "boss-recoil",
+      "texture": "boss-sheet",
+      "start": 12,
+      "end": 15,
+      "frameRate": 8,
+      "repeat": 0
+    },
+    {
+      "key": "barrel-roll",
+      "texture": "barrel-sheet",
+      "start": 0,
+      "end": 7,
+      "frameRate": 14,
+      "repeat": -1
+    },
+    {
+      "key": "barrel-danger",
+      "texture": "barrel-sheet",
+      "start": 8,
+      "end": 11,
+      "frameRate": 8,
+      "repeat": -1
+    },
+    {
+      "key": "goal-idle",
+      "texture": "goal-sheet",
+      "start": 0,
+      "end": 3,
+      "frameRate": 5,
+      "repeat": -1
+    },
+    {
+      "key": "goal-pulse",
+      "texture": "goal-sheet",
+      "start": 4,
+      "end": 7,
+      "frameRate": 8,
+      "repeat": -1
+    }
   ]
 }

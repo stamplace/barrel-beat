@@ -1,7 +1,7 @@
 import { MusicController } from '../../audio/music.js';
 import { SfxController } from '../../audio/sfx.js';
 import { createBoss, createGoal, createHero } from '../entities/HeroFactory.js';
-import { PLATFORM_YS, applyStageLayout, getPlayerYForLevel, getStageLayoutName } from '../level/LevelModel.js';
+import { PLATFORM_YS, applyStageLayout, getFloorBounds, getFloorSpec, getPlayerYForLevel, getStageLayoutName } from '../level/LevelModel.js';
 import {
   BARREL_OPENING_GRACE_MS,
   BARREL_SPAWN_INTERVAL_MS,
@@ -127,7 +127,9 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#120d08');
     this.drawWorld();
 
-    this.player = createHero(this, 42, getPlayerYForLevel(0));
+    const startBounds = this.getDeckBounds(0);
+    const topBounds = this.getDeckBounds(PLATFORM_YS.length - 1);
+    this.player = createHero(this, startBounds.minX + 24, getPlayerYForLevel(0));
     this.physics.add.existing(this.player);
     this.playerBody = this.player.body as Phaser.Physics.Arcade.Body;
     this.playerBody.setAllowGravity(false);
@@ -137,10 +139,129 @@ export class PlayScene extends Phaser.Scene {
     this.heroParts = this.player.getData('parts') as Record<string, Phaser.GameObjects.Shape> | null;
     const heroAssetMode = this.player.getData('assetMode');
 
-    this.goal = createGoal(this, width - 28, PLATFORM_YS[PLATFORM_YS.length - 1] - 26);
+    this.goal = createGoal(this, topBounds.maxX - 22, PLATFORM_YS[PLATFORM_YS.length - 1] - 30);
     this.physics.add.existing(this.goal, true);
+    this.goal.setScale(0.86);
+    this.goal.setDepth(13);
 
-    this.boss = createBoss(this, width - 118, PLATFORM_YS[PLATFORM_YS.length - 1] - 6);
+    const structure = this.add.graphics();
+    structure.setDepth(1);
+
+    let towerMinX = width;
+    let towerMaxX = 0;
+
+    const floorRects: Array<{
+      minX: number;
+      maxX: number;
+      centerX: number;
+      y: number;
+      floorIndex: number;
+    }> = [];
+
+    for (let floorIndex = 0; floorIndex < PLATFORM_YS.length; floorIndex += 1) {
+      const bounds = getFloorBounds(this.stage, floorIndex, width);
+      floorRects.push({
+        minX: bounds.minX,
+        maxX: bounds.maxX,
+        centerX: bounds.centerX,
+        y: PLATFORM_YS[floorIndex],
+        floorIndex,
+      });
+
+      towerMinX = Math.min(towerMinX, bounds.minX);
+      towerMaxX = Math.max(towerMaxX, bounds.maxX);
+    }
+
+    towerMinX -= 34;
+    towerMaxX += 34;
+
+    const towerTop = PLATFORM_YS[PLATFORM_YS.length - 1] - 56;
+    const towerBottom = PLATFORM_YS[0] + 86;
+    const towerWidth = towerMaxX - towerMinX;
+    const towerHeight = towerBottom - towerTop;
+
+    structure.fillStyle(0x10141b, 0.26);
+    structure.fillRoundedRect(towerMinX, towerTop, towerWidth, towerHeight, 18);
+
+    structure.fillStyle(0x1a2029, 0.24);
+    structure.fillRoundedRect(towerMinX + 18, towerTop + 12, towerWidth - 36, towerHeight - 24, 14);
+
+    const pillarXs = [
+      towerMinX + 28,
+      towerMinX + towerWidth * 0.34,
+      towerMinX + towerWidth * 0.66,
+      towerMaxX - 28,
+    ];
+
+    structure.fillStyle(0x0b0e13, 0.30);
+    for (const pillarX of pillarXs) {
+      structure.fillRoundedRect(pillarX - 7, towerTop + 20, 14, towerHeight - 40, 7);
+    }
+
+    structure.fillStyle(0x2a1e14, 0.18);
+    for (let i = 0; i < floorRects.length; i += 1) {
+      const rect = floorRects[i];
+
+      structure.fillRoundedRect(
+        rect.minX - 10,
+        rect.y + 8,
+        rect.maxX - rect.minX + 20,
+        26,
+        6
+      );
+
+      structure.fillStyle(0x0c0f14, 0.26);
+      structure.fillRoundedRect(
+        rect.minX + 12,
+        rect.y + 36,
+        rect.maxX - rect.minX - 24,
+        42,
+        8
+      );
+
+      if (i < floorRects.length - 1) {
+        const next = floorRects[i + 1];
+        const bridgeMinX = Math.min(rect.centerX, next.centerX) - 16;
+        const bridgeMaxX = Math.max(rect.centerX, next.centerX) + 16;
+        const bridgeTop = next.y + 48;
+        const bridgeHeight = rect.y - next.y - 88;
+
+        if (bridgeHeight > 16) {
+          structure.fillStyle(0x141920, 0.24);
+          structure.fillRoundedRect(
+            bridgeMinX,
+            bridgeTop,
+            bridgeMaxX - bridgeMinX,
+            bridgeHeight,
+            10
+          );
+        }
+      }
+    }
+
+    const baseY = PLATFORM_YS[0] + 52;
+    structure.fillStyle(0x120d09, 0.34);
+    structure.fillRoundedRect(towerMinX - 16, baseY, towerWidth + 32, 56, 12);
+
+    structure.fillStyle(0x2a1b11, 0.26);
+    structure.fillRoundedRect(towerMinX - 8, baseY - 8, towerWidth + 16, 28, 10);
+
+    structure.fillStyle(0x3a2b1d, 0.12);
+    structure.fillRoundedRect(towerMinX + 18, baseY + 12, towerWidth - 36, 18, 8);
+
+    const bossDeckY = PLATFORM_YS[PLATFORM_YS.length - 1] - 10;
+    structure.fillStyle(0x24180f, 0.34);
+    structure.fillRoundedRect(towerMinX + 6, bossDeckY - 4, towerWidth - 12, 30, 12);
+
+    structure.fillStyle(0x43311f, 0.16);
+    structure.fillRoundedRect(towerMinX + 24, bossDeckY + 2, towerWidth - 48, 10, 6);
+
+    structure.fillStyle(0x1a120b, 0.22);
+    structure.fillRoundedRect(towerMinX - 4, bossDeckY + 12, 26, 22, 8);
+    structure.fillRoundedRect(towerMaxX - 22, bossDeckY + 12, 26, 22, 8);
+    this.boss = createBoss(this, topBounds.centerX + 6, PLATFORM_YS[PLATFORM_YS.length - 1] - 14);
+    this.boss.setScale(1.34);
+    this.boss.setDepth(12);
     this.bossParts = this.boss.getData('parts') as Record<string, any> | null;
 
     this.barrels = this.physics.add.group({
@@ -334,36 +455,186 @@ export class PlayScene extends Phaser.Scene {
     this.easeBossPart('shadow', 'scaleX', 1, 0.12);
   }
 
+
+  private getDeckWidth(floorIndex: number): number {
+    const width = this.scale.width;
+    const widths = [
+      width - 104,
+      width - 132,
+      width - 112,
+      width - 132,
+      width - 108,
+      width - 96,
+    ];
+    return Math.max(164, widths[floorIndex % widths.length]);
+  }
+
+  private getDeckOffset(floorIndex: number): number {
+    const offsets = [0, -10, 10, -8, 8, 0];
+    return offsets[floorIndex % offsets.length];
+  }
+
+  private getDeckBounds(floorIndex: number): { minX: number; maxX: number; centerX: number; width: number } {
+    const width = this.getDeckWidth(floorIndex);
+    const centerX = this.scale.width / 2 + this.getDeckOffset(floorIndex);
+    return {
+      minX: centerX - width / 2,
+      maxX: centerX + width / 2,
+      centerX,
+      width,
+    };
+  }
+
+
+  private getFloorWidth(levelIndex: number): number {
+    const width = this.scale.width;
+    const widths = [
+      width - 74,
+      width - 96,
+      width - 84,
+      width - 96,
+      width - 82,
+      width - 72,
+    ];
+    return Math.max(190, widths[levelIndex % widths.length]);
+  }
+
+  private getFloorOffset(levelIndex: number): number {
+    const offsets = [0, -6, 6, -5, 5, 0];
+    return offsets[levelIndex % offsets.length];
+  }
+
+  private getFloorBounds(levelIndex: number): { minX: number; maxX: number; centerX: number; width: number } {
+    const width = this.getFloorWidth(levelIndex);
+    const centerX = this.scale.width / 2 + this.getFloorOffset(levelIndex);
+    return {
+      minX: centerX - width / 2,
+      maxX: centerX + width / 2,
+      centerX,
+      width,
+    };
+  }
+
+
+  private getCoreBounds(): { centerX: number; width: number; topY: number; bottomY: number } {
+    return {
+      centerX: 195,
+      width: 74,
+      topY: 320,
+      bottomY: 742,
+    };
+  }
+
+  private getSideMasses(): Array<{ centerX: number; width: number; topY: number; bottomY: number; alpha: number }> {
+    return [
+      { centerX: 102, width: 42, topY: 605, bottomY: 742, alpha: 0.24 },
+      { centerX: 288, width: 42, topY: 468, bottomY: 605, alpha: 0.22 },
+      { centerX: 118, width: 34, topY: 320, bottomY: 468, alpha: 0.18 },
+    ];
+  }
+
   private drawWorld(): void {
     const { width, height } = this.scale;
+
+    if (this.textures.exists('boss-ui-scene-bg')) {
+      this.add.image(width / 2, height / 2, 'boss-ui-scene-bg')
+        .setOrigin(0.5)
+        .setDisplaySize(width, height)
+        .setAlpha(0.28)
+        .setDepth(-30);
+    }
+
+    this.add.rectangle(width / 2, height / 2, width - 12, height - 12, 0x0f0a07, 0.10)
+      .setStrokeStyle(1, 0x6b4a2f, 0.32)
+      .setDepth(-29);
 
     for (let i = 0; i < 8; i += 1) {
       const bx = 24 + i * 46;
       const bh = 40 + (i % 4) * 26;
-      this.add.rectangle(bx, height - bh / 2, 28, bh, 0x1f2937, 0.34);
+      this.add.rectangle(bx, height - bh / 2, 28, bh, 0x1f2937, 0.28).setDepth(-28);
     }
 
     this.add.text(width / 2, 38, 'BARREL BEAT', {
       fontFamily: 'Arial Black, Arial, sans-serif',
       fontSize: '28px',
       color: '#ffb347',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(30);
 
     this.add.text(width / 2, 68, 'Climb ladders • dodge barrels • reach the beacon', {
       fontFamily: 'Arial, sans-serif',
       fontSize: '13px',
       color: '#f3e9dc',
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(30);
+
+    const core = this.getCoreBounds();
+    this.add.rectangle(core.centerX, (core.topY + core.bottomY) / 2, core.width, core.bottomY - core.topY + 70, 0x1b1815, 0.20)
+      .setDepth(-8);
+
+    this.add.rectangle(core.centerX, (core.topY + core.bottomY) / 2, 36, core.bottomY - core.topY + 54, 0x6a6f72, 0.14)
+      .setDepth(-7);
+
+    for (const mass of this.getSideMasses()) {
+      this.add.rectangle(
+        mass.centerX,
+        (mass.topY + mass.bottomY) / 2,
+        mass.width,
+        mass.bottomY - mass.topY + 30,
+        0x171411,
+        mass.alpha,
+      ).setDepth(-9);
+    }
+
+    const hasDeckSet =
+      this.textures.exists('deck-left') &&
+      this.textures.exists('deck-middle') &&
+      this.textures.exists('deck-right');
+
+    const hasFacadeSet =
+      this.textures.exists('facade-platform-clean') &&
+      this.textures.exists('facade-platform-cracked');
 
     for (let i = 0; i < PLATFORM_YS.length; i += 1) {
       const y = PLATFORM_YS[i];
-      const color = i % 2 === 0 ? 0x6b3f1d : 0x7a4520;
-      this.add.rectangle(width / 2, y, width - 28, 12, color).setOrigin(0.5);
+      const bounds = getFloorBounds(this.stage, i, this.scale.width);
 
-      for (let x = 26; x < width - 20; x += 28) {
-        this.add.rectangle(x, y - 4, 14, 2, 0x2b1607, 0.28).setOrigin(0.5);
+      if (hasDeckSet) {
+        const sideWidth = i === PLATFORM_YS.length - 1 ? 112 : 104;
+        const middleWidth = Math.max(176, bounds.width - sideWidth * 2 + 20);
+        const deckCenterY = y + 18;
+        const leftX = bounds.minX + sideWidth / 2;
+        const rightX = bounds.maxX - sideWidth / 2;
+        const middleKey = i === 2 && this.textures.exists('deck-cracked') ? 'deck-cracked' : 'deck-middle';
+
+        this.add.image(bounds.centerX, deckCenterY, middleKey)
+          .setOrigin(0.5)
+          .setDisplaySize(middleWidth, i === 3 ? 126 : 118)
+          .setDepth(3);
+
+        this.add.image(leftX, deckCenterY, 'deck-left')
+          .setOrigin(0.5)
+          .setDisplaySize(sideWidth, i === 3 ? 130 : 122)
+          .setDepth(4);
+
+        this.add.image(rightX, deckCenterY, 'deck-right')
+          .setOrigin(0.5)
+          .setDisplaySize(sideWidth, i === 3 ? 130 : 122)
+          .setDepth(4);
+      } else if (hasFacadeSet) {
+        const facadeKey = i === 2 ? 'facade-platform-cracked' : 'facade-platform-clean';
+        this.add.image(bounds.centerX, y + 18, facadeKey)
+          .setOrigin(0.5)
+          .setDisplaySize(bounds.width + 24, i === 3 ? 126 : 118)
+          .setDepth(3);
+      } else {
+        this.add.rectangle(bounds.centerX, y + 18, bounds.width, i === 3 ? 54 : 46, 0x7a4520).setDepth(3);
       }
+
+      this.add.rectangle(bounds.centerX, y - 1, bounds.width - 10, 8, 0xe8ddba, 0.14).setDepth(5);
     }
+
+    const crownY = 228;
+    this.add.rectangle(195, crownY + 42, 238, 108, 0x181512, 0.18).setDepth(-10);
+    this.add.rectangle(195, crownY + 8, 214, 18, 0xb98b4b, 0.10).setDepth(-9);
 
     const ladderLayer = drawLadderLayer(this);
     this.ladderHints = ladderLayer.hints;
@@ -556,7 +827,8 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    this.targetMoveX = Phaser.Math.Clamp(pointer.x, 18, this.scale.width - 18);
+    const floorBounds = getFloorBounds(this.stage, this.currentLevelIndex, this.scale.width);
+    this.targetMoveX = Phaser.Math.Clamp(pointer.x, floorBounds.minX, floorBounds.maxX);
     this.sfx.move();
     this.moveMarker
       .setPosition(this.targetMoveX, getPlayerYForLevel(this.currentLevelIndex) + MOVE_MARKER_Y_OFFSET)
@@ -567,7 +839,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.gameOver || !this.started) return;
     if (this.time.now - this.runStartedAt < BARREL_OPENING_GRACE_MS) return;
 
-    const warnX = this.boss.x - 24;
+    const warnX = this.boss.x + 10;
     const warnY = PLATFORM_YS[PLATFORM_YS.length - 1] - 18;
 
     this.sfx.warn();
@@ -682,7 +954,8 @@ export class PlayScene extends Phaser.Scene {
   private onGoalReached(): void {
     if (!this.started || this.gameOver) return;
     if (this.currentLevelIndex !== PLATFORM_YS.length - 1) return;
-    if (this.player.x < this.scale.width - 82) return;
+    const topBounds = this.getFloorBounds(PLATFORM_YS.length - 1);
+    if (this.player.x < topBounds.maxX - 52) return;
 
     this.stage += 1;
     this.score += 250;
@@ -719,7 +992,8 @@ export class PlayScene extends Phaser.Scene {
     this.snapToLadder = null;
     this.targetMoveX = null;
     this.playerBody.setVelocity(0);
-    this.player.x = 42;
+    const bottomBounds = getFloorBounds(this.stage, 0, this.scale.width);
+    this.player.x = bottomBounds.minX + 24;
     this.player.y = getPlayerYForLevel(0);
     this.moveMarker.setScale(0.8);
     this.moveMarker.setVisible(false);
@@ -789,12 +1063,13 @@ export class PlayScene extends Phaser.Scene {
     } else {
       this.player.y = getPlayerYForLevel(this.currentLevelIndex);
       this.updateAutoMove();
-      this.player.x = Phaser.Math.Clamp(this.player.x, 18, this.scale.width - 18);
+      const floorBounds = getFloorBounds(this.stage, this.currentLevelIndex, this.scale.width);
+      this.player.x = Phaser.Math.Clamp(this.player.x, floorBounds.minX, floorBounds.maxX);
     }
 
     this.updateHeroAnimation();
     this.updateBossAnimation();
     this.barrelSystem.update(this.stage, this.scale.width);
-    this.boss.y = PLATFORM_YS[PLATFORM_YS.length - 1] - 8 + Math.sin(this.time.now / 180) * 2;
+    this.boss.y = PLATFORM_YS[PLATFORM_YS.length - 1] - 14 + Math.sin(this.time.now / 180) * 2;
   }
 }

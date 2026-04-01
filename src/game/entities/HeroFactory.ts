@@ -109,6 +109,74 @@ export function createBoss(
     boss.setData('assetMode', 'sprite');
     return boss;
   }
+
+  if (scene.textures.exists('boss-topdeck-king-idle')) {
+    const shadow = scene.add.ellipse(0, 22, 110, 16, 0x000000, 0.22);
+    const king = scene.add.image(0, 6, 'boss-topdeck-king-idle')
+      .setOrigin(0.5, 0.82)
+      .setDisplaySize(184, 184);
+
+    const boss = scene.add.container(x, y, [
+      shadow,
+      king,
+    ]);
+
+    boss.setDataEnabled();
+    boss.setData('parts', {
+      shadow,
+      king,
+    });
+    boss.setData('assetMode', 'topdeck-king');
+    return boss;
+  }
+
+  if (scene.textures.exists('boss-icon')) {
+    const shadow = scene.add.ellipse(0, 20, 80, 14, 0x000000, 0.22);
+    const icon = scene.add.image(0, -4, 'boss-icon')
+      .setOrigin(0.5)
+      .setDisplaySize(96, 96);
+
+    const heldBarrel = scene.textures.exists('barrel-ui-icon')
+      ? scene.add.image(34, 16, 'barrel-ui-icon').setDisplaySize(22, 22)
+      : outlinedCircle(scene, 34, 16, 8, 0xce7a18, 0x6b3415, 2);
+
+    const boss = scene.add.container(x, y, [
+      shadow,
+      icon,
+      heldBarrel,
+    ]);
+
+    boss.setDataEnabled();
+    boss.setData('parts', {
+      shadow,
+      icon,
+      heldBarrel,
+    });
+    boss.setData('assetMode', 'icon');
+    return boss;
+  }
+
+  if (scene.textures.exists('boss-portrait')) {
+    const shadow = scene.add.ellipse(0, 20, 80, 14, 0x000000, 0.18);
+    const portrait = scene.add.image(0, -2, 'boss-portrait')
+      .setOrigin(0.5)
+      .setDisplaySize(96, 96)
+      .setAlpha(0.01);
+
+    const boss = scene.add.container(x, y, [
+      shadow,
+      portrait,
+    ]);
+
+    boss.setDataEnabled();
+    boss.setData('parts', {
+      shadow,
+      portrait,
+    });
+    boss.setData('assetMode', 'portrait-disabled');
+    return boss;
+  }
+
   const shadow = scene.add.ellipse(0, 18, 54, 10, 0x000000, 0.2);
 
   const legL = outlinedRect(scene, -13, 12, 10, 10, 0x7a3b14);
