@@ -29,18 +29,18 @@ const LEVEL_LAYOUTS: LevelLayout[] = [
     name: 'Temple Tower V1',
     platformYs: [742, 605, 468, 320],
     ladders: [
-      { x: 188, from: 0, to: 1 },
-      { x: 214, from: 1, to: 2 },
-      { x: 196, from: 2, to: 3 },
+      { x: 196, from: 0, to: 1 },
+      { x: 208, from: 1, to: 2 },
+      { x: 198, from: 2, to: 3 },
     ],
   },
   {
     name: 'Temple Tower V1 Shift',
     platformYs: [742, 605, 468, 320],
     ladders: [
-      { x: 202, from: 0, to: 1 },
-      { x: 184, from: 1, to: 2 },
-      { x: 208, from: 2, to: 3 },
+      { x: 194, from: 0, to: 1 },
+      { x: 206, from: 1, to: 2 },
+      { x: 200, from: 2, to: 3 },
     ],
   },
 ];
@@ -83,8 +83,8 @@ export function getFloorBounds(
   levelIndex: number,
   sceneWidth: number,
 ): { minX: number; maxX: number; centerX: number; width: number } {
-  const widths = [274, 248, 228, 282];
-  const centers = [195, 196, 196, 195];
+  const widths = [286, 252, 236, 312];
+  const centers = [195, 191, 199, 195];
 
   const width = widths[Math.max(0, Math.min(levelIndex, widths.length - 1))];
   const centerX = centers[Math.max(0, Math.min(levelIndex, centers.length - 1))];
